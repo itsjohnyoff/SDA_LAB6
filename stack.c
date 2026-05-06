@@ -3,108 +3,219 @@
 #include <string.h>
 #include "stack.h"
 
-// Requirement I: Creating
+static Node* createNode(const Citizen* data, int priority) {
+    Node* node = (Node*)malloc(sizeof(Node));
+    if (node == NULL) {
+        return NULL;
+    }
+
+    node->data = *data;
+    node->priority = priority;
+    node->next = NULL;
+    node->prev = NULL;
+    return node;
+}
+
+static Node* nodeAtPosition(const Stack* s, size_t position) {
+    Node* current;
+    size_t index;
+
+    if (s == NULL || position == 0 || position > s->size) {
+        return NULL;
+    }
+
+    current = s->top;
+    for (index = 1; index < position; index++) {
+        current = current->next;
+    }
+
+    return current;
+}
+
 void initStack(Stack* s) {
+    if (s == NULL) {
+        return;
+    }
+
     s->top = NULL;
     s->size = 0;
 }
 
-int isStackEmpty(Stack* s) {
-    return s->top == NULL;
+int isStackEmpty(const Stack* s) {
+    return s == NULL || s->top == NULL;
 }
 
-// Requirement II: Insert an element
-void push(Stack* s, Citizen data) {
-    Node* newNode = (Node*)malloc(sizeof(Node));
-    if (!newNode) {
-        printf("Memory allocation failed!\n");
-        return;
+size_t stackSize(const Stack* s) {
+    return s == NULL ? 0 : s->size;
+}
+
+int pushStack(Stack* s, const Citizen* data) {
+    Node* node;
+
+    if (s == NULL || data == NULL) {
+        return 0;
     }
-    newNode->data = data;
-    newNode->priority = 0; // Not used for standard stack
-    newNode->next = s->top;
-    newNode->prev = NULL; 
-    
-    // Connect the old top's prev pointer back to the new node
+
+    node = createNode(data, 0);
+    if (node == NULL) {
+        printf("Memory allocation failed. Stack insert was cancelled.\n");
+        return 0;
+    }
+
+    node->next = s->top;
     if (s->top != NULL) {
-        s->top->prev = newNode;
+        s->top->prev = node;
     }
-    
-    s->top = newNode;
+
+    s->top = node;
     s->size++;
+    return 1;
 }
 
-// Requirement IV: Deleting an element
-Citizen pop(Stack* s) {
-    Citizen emptyCitizen = {0}; // Fallback struct to return if empty
-    
+int popStack(Stack* s, Citizen* removed) {
+    Node* temp;
+
     if (isStackEmpty(s)) {
-        printf("Stack Underflow! Cannot pop from an empty stack.\n");
-        return emptyCitizen;
+        printf("Stack underflow. The stack is empty.\n");
+        return 0;
     }
-    
-    Node* temp = s->top;
-    Citizen poppedData = temp->data;
-    
-    s->top = s->top->next;
-    
+
+    temp = s->top;
+    if (removed != NULL) {
+        *removed = temp->data;
+    }
+
+    s->top = temp->next;
     if (s->top != NULL) {
         s->top->prev = NULL;
     }
-    
-    free(temp); // Critical: frees the dynamically allocated memory
+
+    free(temp);
     s->size--;
-    
-    return poppedData;
+    return 1;
 }
 
-// Requirement I: Crossing and displaying
-void displayStack(Stack* s) {
+int searchStackByPosition(const Stack* s, size_t position, Citizen* found) {
+    Node* node = nodeAtPosition(s, position);
+
+    if (node == NULL) {
+        return 0;
+    }
+
+    if (found != NULL) {
+        *found = node->data;
+    }
+
+    return 1;
+}
+
+int searchStackBySurname(const Stack* s, const char* surname, Citizen* found, size_t* position) {
+    Node* current;
+    size_t index;
+
+    if (s == NULL || surname == NULL) {
+        return 0;
+    }
+
+    current = s->top;
+    index = 1;
+
+    while (current != NULL) {
+        if (strcmp(current->data.surname, surname) == 0) {
+            if (found != NULL) {
+                *found = current->data;
+            }
+            if (position != NULL) {
+                *position = index;
+            }
+            return 1;
+        }
+
+        current = current->next;
+        index++;
+    }
+
+    return 0;
+}
+
+int deleteStackByPosition(Stack* s, size_t position, Citizen* removed) {
+    Node* target;
+
+    if (s == NULL || position == 0 || position > s->size) {
+        return 0;
+    }
+
+    if (position == 1) {
+        return popStack(s, removed);
+    }
+
+    target = nodeAtPosition(s, position);
+    if (target == NULL) {
+        return 0;
+    }
+
+    if (removed != NULL) {
+        *removed = target->data;
+    }
+
+    if (target->prev != NULL) {
+        target->prev->next = target->next;
+    }
+    if (target->next != NULL) {
+        target->next->prev = target->prev;
+    }
+
+    free(target);
+    s->size--;
+    return 1;
+}
+
+int deleteStackBySurname(Stack* s, const char* surname, Citizen* removed, size_t* position) {
+    Citizen ignored;
+    size_t foundPosition;
+
+    if (!searchStackBySurname(s, surname, &ignored, &foundPosition)) {
+        return 0;
+    }
+
+    if (position != NULL) {
+        *position = foundPosition;
+    }
+
+    return deleteStackByPosition(s, foundPosition, removed);
+}
+
+void displayStack(const Stack* s) {
+    Node* current;
+    size_t position;
+
     if (isStackEmpty(s)) {
         printf("Stack is empty.\n");
         return;
     }
-    
-    Node* current = s->top;
-    printf("\n--- Current Stack (Top to Bottom) ---\n");
-    while (current != NULL) {
-        printf("Citizen: %s %s | DOB: %02d/%02d/%04d\n", 
-               current->data.name, current->data.surname, 
-               current->data.dob.day, current->data.dob.month, current->data.dob.year);
-        current = current->next;
-    }
-    printf("-------------------------------------\n");
-}
 
-// Requirement III: Search for an element by value
-void searchStackBySurname(Stack* s, const char* surname) {
-    if (isStackEmpty(s)) {
-        printf("Stack is empty. Cannot search.\n");
-        return;
-    }
-    
-    Node* current = s->top;
-    int position = 1;
-    int found = 0;
-    
+    printf("\nVERSION A - Dynamic Stack based on List ADT\n");
+    printf("Records: %zu\n", s->size);
+    printf("Traversal order: top to bottom\n");
+    printf("--------------------------------------------------------------------------\n");
+
+    current = s->top;
+    position = 1;
     while (current != NULL) {
-        if (strcmp(current->data.surname, surname) == 0) {
-            printf("Found %s %s at position %d from top.\n", 
-                   current->data.name, current->data.surname, position);
-            found = 1;
-        }
+        printCitizenBrief(&current->data, position, 0, 0);
         current = current->next;
         position++;
     }
-    
-    if (!found) {
-        printf("Citizen with surname '%s' not found in stack.\n", surname);
-    }
+
+    printf("--------------------------------------------------------------------------\n");
 }
 
-// Housekeeping: Prevents memory leaks when the program exits
 void clearStack(Stack* s) {
+    if (s == NULL) {
+        return;
+    }
+
     while (!isStackEmpty(s)) {
-        pop(s);
+        popStack(s, NULL);
     }
 }

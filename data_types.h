@@ -1,6 +1,20 @@
 #ifndef DATA_TYPES_H
 #define DATA_TYPES_H
 
+#include <stddef.h>
+
+#define NAME_LENGTH 50
+#define SURNAME_LENGTH 50
+#define CITY_LENGTH 50
+#define STREET_LENGTH 50
+#define POST_CODE_LENGTH 20
+
+typedef enum {
+    CATEGORY_CHILD = 1,
+    CATEGORY_ADULT = 2,
+    CATEGORY_SENIOR = 3
+} CitizenCategory;
+
 typedef struct {
     int day;
     int month;
@@ -8,19 +22,19 @@ typedef struct {
 } Date;
 
 typedef struct {
-    char city[50];
-    char street[50];
-    char postCode[20];
+    char city[CITY_LENGTH];
+    char street[STREET_LENGTH];
+    char postCode[POST_CODE_LENGTH];
 } Address;
 
 typedef struct {
-    char name[50];
-    char surname[50];
+    char name[NAME_LENGTH];
+    char surname[SURNAME_LENGTH];
     Date dob;
     char gender;
     Address home;
     Address work;
-    
+
     int ageYears;
     int ageMonths;
     int ageDays;
@@ -28,12 +42,15 @@ typedef struct {
     float amountPaid;
 } Citizen;
 
-// Node for our Linked List based Stack and Queues
 typedef struct Node {
     Citizen data;
-    int priority;      // Specifically for Priority Queue
+    int priority;
     struct Node* next;
-    struct Node* prev; // Specifically for Double Ended Queue
+    struct Node* prev;
 } Node;
+
+const char* citizenCategoryName(int category);
+void printCitizenBrief(const Citizen* citizen, size_t position, int priority, int showPriority);
+void printCitizenDetails(const Citizen* citizen);
 
 #endif

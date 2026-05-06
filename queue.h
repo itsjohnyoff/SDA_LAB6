@@ -3,37 +3,38 @@
 
 #include "data_types.h"
 
-// The Queue structure tracks the front, rear, and size
+typedef enum {
+    QUEUE_SIMPLE = 1,
+    QUEUE_DEQUE = 2,
+    QUEUE_CIRCULAR = 3,
+    QUEUE_PRIORITY = 4
+} QueueType;
+
 typedef struct {
     Node* front;
     Node* rear;
-    int size;
+    size_t size;
+    QueueType type;
 } Queue;
 
-// Initialization and Utility
-void initQueue(Queue* q);
-int isQueueEmpty(Queue* q);
+void initQueue(Queue* q, QueueType type);
+int isQueueEmpty(const Queue* q);
+size_t queueSize(const Queue* q);
+const char* queueTypeName(QueueType type);
 
-// 1. Simple Queue (FIFO)
-void enqueueSimple(Queue* q, Citizen data);
-Citizen dequeueSimple(Queue* q);
+int enqueueQueue(Queue* q, const Citizen* data, int priority);
+int dequeueQueue(Queue* q, Citizen* removed);
 
-// 2. Double Ended Queue (Deque)
-// Note: enqueueRear is identical to enqueueSimple, dequeueFront is identical to dequeueSimple.
-void enqueueFront(Queue* q, Citizen data);
-Citizen dequeueRear(Queue* q);
+int enqueueQueueFront(Queue* q, const Citizen* data);
+int dequeueQueueRear(Queue* q, Citizen* removed);
 
-// 3. Circular Queue
-void enqueueCircular(Queue* q, Citizen data);
-Citizen dequeueCircular(Queue* q);
+int searchQueueByPosition(const Queue* q, size_t position, Citizen* found, int* priority);
+int searchQueueBySurname(const Queue* q, const char* surname, Citizen* found, size_t* position, int* priority);
 
-// 4. Priority Queue
-void enqueuePriority(Queue* q, Citizen data, int priority);
-// Note: dequeuePriority is identical to dequeueSimple since highest priority is always at the front.
+int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* priority);
+int deleteQueueBySurname(Queue* q, const char* surname, Citizen* removed, size_t* position, int* priority);
 
-// General Operations (Requirement I & III)
-void displayQueue(Queue* q, int isCircular);
-void searchQueueBySurname(Queue* q, const char* surname, int isCircular);
-void clearQueue(Queue* q, int isCircular);
+void displayQueue(const Queue* q);
+void clearQueue(Queue* q);
 
 #endif
