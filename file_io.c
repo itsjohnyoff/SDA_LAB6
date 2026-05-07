@@ -256,6 +256,10 @@ int loadQueueFromBinaryFile(Queue* q, const char* filename, int replaceExisting)
 
     count = 0;
     while (fread(&record, sizeof(QueueFileRecord), 1, file) == 1) {
+        /* for priority queue, set priority from category (child=1, adult=2, senior=3) */
+        if (q->type == QUEUE_PRIORITY) {
+            record.priority = record.data.category;
+        }
         if (!enqueueQueue(q, &record.data, record.priority)) {
             fclose(file);
             printf("Queue load stopped because an insert failed.\n");

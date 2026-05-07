@@ -12,12 +12,14 @@
 #define INPUT_LENGTH 256
 #define MAX_RECORDS 10000
 
+/* strips the trailing newline that fgets leaves in the buffer */
 static void trimNewline(char* text) {
     if (text != NULL) {
         text[strcspn(text, "\n")] = '\0';
     }
 }
 
+/* prints a prompt and reads one line from stdin into buffer */
 static int readLine(const char* prompt, char* buffer, size_t length) {
     if (prompt != NULL) {
         printf("%s", prompt);
@@ -31,6 +33,7 @@ static int readLine(const char* prompt, char* buffer, size_t length) {
     return 1;
 }
 
+/* keeps asking until the user types something non-empty */
 static void readRequiredString(const char* prompt, char* destination, size_t length) {
     char buffer[INPUT_LENGTH];
 
@@ -45,6 +48,7 @@ static void readRequiredString(const char* prompt, char* destination, size_t len
     destination[length - 1] = '\0';
 }
 
+/* reads an integer and loops until it's within [minValue, maxValue] */
 static int readIntRange(const char* prompt, int minValue, int maxValue) {
     char buffer[INPUT_LENGTH];
     char* end;
@@ -66,6 +70,7 @@ static int readIntRange(const char* prompt, int minValue, int maxValue) {
     }
 }
 
+/* asks a y/n question, returns 1 for yes, 0 for no */
 static int readYesNo(const char* prompt) {
     char buffer[INPUT_LENGTH];
 
@@ -82,6 +87,7 @@ static int readYesNo(const char* prompt) {
     }
 }
 
+/* gets today's date from the system clock */
 static Date currentDate(void) {
     time_t rawTime = time(NULL);
     struct tm* local = localtime(&rawTime);
@@ -96,10 +102,12 @@ static Date currentDate(void) {
     return today;
 }
 
+/* leap year check (divisible by 400, or by 4 but not 100) */
 static int isLeapYear(int year) {
     return (year % 400 == 0) || (year % 4 == 0 && year % 100 != 0);
 }
 
+/* returns how many days a given month has, handles february + leap year */
 static int daysInMonth(int month, int year) {
     static const int days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
@@ -110,6 +118,7 @@ static int daysInMonth(int month, int year) {
     return days[month - 1];
 }
 
+/* returns 1 if date is after today */
 static int isFutureDate(Date date, Date today) {
     if (date.year != today.year) {
         return date.year > today.year;
@@ -120,6 +129,7 @@ static int isFutureDate(Date date, Date today) {
     return date.day > today.day;
 }
 
+/* checks that day/month/year make sense as a real date */
 static int isValidDate(Date date) {
     if (date.year < 1900 || date.month < 1 || date.month > 12 || date.day < 1) {
         return 0;
@@ -128,6 +138,7 @@ static int isValidDate(Date date) {
     return date.day <= daysInMonth(date.month, date.year);
 }
 
+/* asks for day/month/year and loops until it's a valid past date */
 static Date readDateOfBirth(void) {
     Date date;
     Date today = currentDate();
@@ -145,6 +156,7 @@ static Date readDateOfBirth(void) {
     }
 }
 
+/* calculates age in years/months/days from dob, sets category and payment */
 static void updateDerivedCitizenFields(Citizen* citizen) {
     Date today;
     int previousMonth;
@@ -192,6 +204,7 @@ static void updateDerivedCitizenFields(Citizen* citizen) {
     }
 }
 
+/* loops until the user enters M, F, or O */
 static char readGender(void) {
     char buffer[INPUT_LENGTH];
     char gender;
@@ -207,6 +220,7 @@ static char readGender(void) {
     }
 }
 
+/* reads city, street, and postal code into an Address struct */
 static void inputAddress(const char* title, Address* address) {
     printf("%s\n", title);
     readRequiredString("  City: ", address->city, CITY_LENGTH);
@@ -214,6 +228,7 @@ static void inputAddress(const char* title, Address* address) {
     readRequiredString("  Postal code: ", address->postCode, POST_CODE_LENGTH);
 }
 
+/* reads all citizen fields from the user, then computes age/category/payment */
 static void inputCitizen(Citizen* citizen, size_t ordinal) {
     if (citizen == NULL) {
         return;
@@ -230,10 +245,12 @@ static void inputCitizen(Citizen* citizen, size_t ordinal) {
     updateDerivedCitizenFields(citizen);
 }
 
+/* asks the user for a filename */
 static void readFileAddress(char* filename, size_t length) {
     readRequiredString("File address/name: ", filename, length);
 }
 
+/* saves the stack to a text or binary file based on user choice */
 static void registerStackToFile(const Stack* stack) {
     char filename[INPUT_LENGTH];
     int mode;
@@ -248,6 +265,7 @@ static void registerStackToFile(const Stack* stack) {
     }
 }
 
+/* saves the queue to a text or binary file based on user choice */
 static void registerQueueToFile(const Queue* queue) {
     char filename[INPUT_LENGTH];
     int mode;
@@ -262,18 +280,21 @@ static void registerQueueToFile(const Queue* queue) {
     }
 }
 
+/* asks if the user wants to save the stack to a file right now */
 static void offerStackRegistration(const Stack* stack) {
     if (readYesNo("Register the current stack in a file now? (y/n): ")) {
         registerStackToFile(stack);
     }
 }
 
+/* asks if the user wants to save the queue to a file right now */
 static void offerQueueRegistration(const Queue* queue) {
     if (readYesNo("Register the current queue in a file now? (y/n): ")) {
         registerQueueToFile(queue);
     }
 }
 
+/* reads N citizens from the user and rebuilds the stack from them */
 static void createStackFromRecords(Stack* stack) {
     Citizen* records;
     size_t count;
@@ -300,6 +321,7 @@ static void createStackFromRecords(Stack* stack) {
     offerStackRegistration(stack);
 }
 
+/* reads one citizen and pushes it onto the stack */
 static void pushOneCitizen(Stack* stack) {
     Citizen citizen;
 
@@ -310,6 +332,7 @@ static void pushOneCitizen(Stack* stack) {
     }
 }
 
+/* pops the top citizen and prints their details */
 static void popOneCitizen(Stack* stack) {
     Citizen removed;
 
@@ -320,6 +343,7 @@ static void popOneCitizen(Stack* stack) {
     }
 }
 
+/* asks for a position and shows the citizen at that spot in the stack */
 static void searchStackPositionMenu(const Stack* stack) {
     Citizen found;
     int position;
@@ -337,6 +361,7 @@ static void searchStackPositionMenu(const Stack* stack) {
     }
 }
 
+/* asks for a surname and searches the stack for it */
 static void searchStackSurnameMenu(const Stack* stack) {
     char surname[SURNAME_LENGTH];
     Citizen found;
@@ -351,6 +376,7 @@ static void searchStackSurnameMenu(const Stack* stack) {
     }
 }
 
+/* asks for a position and deletes the citizen at that spot */
 static void deleteStackPositionMenu(Stack* stack) {
     Citizen removed;
     int position;
@@ -370,6 +396,7 @@ static void deleteStackPositionMenu(Stack* stack) {
     }
 }
 
+/* asks for a surname and deletes the matching citizen from the stack */
 static void deleteStackSurnameMenu(Stack* stack) {
     char surname[SURNAME_LENGTH];
     Citizen removed;
@@ -385,6 +412,7 @@ static void deleteStackSurnameMenu(Stack* stack) {
     }
 }
 
+/* loads stack data from a binary file, optionally replacing what's there */
 static void loadStackMenu(Stack* stack) {
     char filename[INPUT_LENGTH];
     int replace;
@@ -394,6 +422,7 @@ static void loadStackMenu(Stack* stack) {
     loadStackFromBinaryFile(stack, filename, replace);
 }
 
+/* the stack submenu loop with all stack operations */
 static void versionAStackMenu(Stack* stack) {
     int choice;
     char filename[INPUT_LENGTH];
@@ -459,6 +488,7 @@ static void versionAStackMenu(Stack* stack) {
     }
 }
 
+/* lets the user pick which queue type to work with */
 static QueueType readQueueType(void) {
     printf("\nQueue type\n");
     printf("1. Simple Queue\n");
@@ -468,14 +498,17 @@ static QueueType readQueueType(void) {
     return (QueueType)readIntRange("Select queue type: ", 1, 4);
 }
 
+/* returns a pointer to the right queue from the array based on type */
 static Queue* queueByType(Queue queues[], QueueType type) {
     return &queues[(int)type - 1];
 }
 
+/* asks the user for a priority value (1 = highest) */
 static int readPriority(void) {
     return readIntRange("Priority (1 = highest priority): ", 1, 1000000);
 }
 
+/* reads N citizens (and priorities if needed) and rebuilds the queue */
 static void createQueueFromRecords(Queue* queue) {
     Citizen* records;
     int* priorities;
@@ -495,7 +528,7 @@ static void createQueueFromRecords(Queue* queue) {
 
     for (index = 0; index < count; index++) {
         inputCitizen(&records[index], index + 1);
-        priorities[index] = queue->type == QUEUE_PRIORITY ? readPriority() : 0;
+        priorities[index] = queue->type == QUEUE_PRIORITY ? records[index].category : 0;
     }
 
     clearQueue(queue);
@@ -509,6 +542,8 @@ static void createQueueFromRecords(Queue* queue) {
     offerQueueRegistration(queue);
 }
 
+/* reads one citizen and inserts them into the queue.
+   for deque: asks front or rear. for priority queue: auto-assigns from category */
 static void enqueueOneCitizen(Queue* queue) {
     Citizen citizen;
     int option;
@@ -530,13 +565,15 @@ static void enqueueOneCitizen(Queue* queue) {
         return;
     }
 
-    priority = queue->type == QUEUE_PRIORITY ? readPriority() : 0;
+    priority = queue->type == QUEUE_PRIORITY ? citizen.category : 0;
     if (enqueueQueue(queue, &citizen, priority)) {
         printf("Citizen inserted into %s.\n", queueTypeName(queue->type));
         offerQueueRegistration(queue);
     }
 }
 
+/* removes one citizen from the queue.
+   for deque: asks if removing from front or rear */
 static void dequeueOneCitizen(Queue* queue) {
     Citizen removed;
     int option;
@@ -560,6 +597,7 @@ static void dequeueOneCitizen(Queue* queue) {
     }
 }
 
+/* asks for a position and shows the citizen at that spot in the queue */
 static void searchQueuePositionMenu(const Queue* queue) {
     Citizen found;
     int priority;
@@ -581,6 +619,7 @@ static void searchQueuePositionMenu(const Queue* queue) {
     }
 }
 
+/* asks for a surname and searches the queue for it */
 static void searchQueueSurnameMenu(const Queue* queue) {
     char surname[SURNAME_LENGTH];
     Citizen found;
@@ -599,6 +638,7 @@ static void searchQueueSurnameMenu(const Queue* queue) {
     }
 }
 
+/* asks for a position and deletes the citizen at that spot in the queue */
 static void deleteQueuePositionMenu(Queue* queue) {
     Citizen removed;
     int priority;
@@ -622,6 +662,7 @@ static void deleteQueuePositionMenu(Queue* queue) {
     }
 }
 
+/* asks for a surname and deletes the matching citizen from the queue */
 static void deleteQueueSurnameMenu(Queue* queue) {
     char surname[SURNAME_LENGTH];
     Citizen removed;
@@ -641,6 +682,7 @@ static void deleteQueueSurnameMenu(Queue* queue) {
     }
 }
 
+/* loads queue data from a binary file, optionally replacing what's there */
 static void loadQueueMenu(Queue* queue) {
     char filename[INPUT_LENGTH];
     int replace;
@@ -650,6 +692,7 @@ static void loadQueueMenu(Queue* queue) {
     loadQueueFromBinaryFile(queue, filename, replace);
 }
 
+/* the queue submenu loop, user picks a queue type and does operations on it */
 static void versionBQueueMenu(Queue queues[]) {
     QueueType activeType = readQueueType();
     Queue* activeQueue = queueByType(queues, activeType);
@@ -722,6 +765,7 @@ static void versionBQueueMenu(Queue queues[]) {
     }
 }
 
+/* submenu for file operations: create, open, view, or delete data files */
 static void fileToolsMenu(void) {
     int choice;
     char filename[INPUT_LENGTH];
@@ -770,9 +814,10 @@ static void fileToolsMenu(void) {
     }
 }
 
+/* main entry point: sets up the stack and 4 queue types, runs the menu loop */
 int main(void) {
     Stack stackVersionA;
-    Queue queuesVersionB[4];
+    Queue queuesVersionB[4];   /* one for each queue type: simple, deque, circular, priority */
     int choice;
     size_t index;
 
@@ -801,6 +846,7 @@ int main(void) {
                 fileToolsMenu();
                 break;
             case 0:
+                /* free everything before exiting */
                 clearStack(&stackVersionA);
                 for (index = 0; index < 4; index++) {
                     clearQueue(&queuesVersionB[index]);
