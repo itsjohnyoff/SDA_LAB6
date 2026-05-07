@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "data_types.h"
 
+/* Converts the numeric category into a short label. */
 const char* citizenCategoryName(int category) {
     switch (category) {
         case CATEGORY_CHILD:
@@ -14,6 +15,7 @@ const char* citizenCategoryName(int category) {
     }
 }
 
+/* Prints one compact line for list traversal output. */
 void printCitizenBrief(const Citizen* citizen, size_t position, int priority, int showPriority) {
     if (citizen == NULL) {
         return;
@@ -38,6 +40,7 @@ void printCitizenBrief(const Citizen* citizen, size_t position, int priority, in
     printf("\n");
 }
 
+/* Prints the full citizen record for menu actions and file views. */
 void printCitizenDetails(const Citizen* citizen) {
     if (citizen == NULL) {
         return;
@@ -50,11 +53,11 @@ void printCitizenDetails(const Citizen* citizen) {
            citizen->dob.month,
            citizen->dob.year);
     printf("Gender: %c\n", citizen->gender);
-    printf("Home address: %s, %s, %s\n",
+        printf("Home address: %s, %s, MD-%s\n",
            citizen->home.city,
            citizen->home.street,
            citizen->home.postCode);
-    printf("Work address: %s, %s, %s\n",
+        printf("Work address: %s, %s, MD-%s\n",
            citizen->work.city,
            citizen->work.street,
            citizen->work.postCode);

@@ -1,0 +1,5 @@
+VERSION A - Dynamic Stack based on List ADT
+Records: 2
+
+1. Ion  Popescu | DOB: 01/01/1960 | Gender: M | Age: 66Y 4M 7D | Category: Senior | Paid: 3200.00 | Home: Orhei, Vasile Lupu, 3500 | Work: Orhei, Unirii, 3501
+2. David Nenita | DOB: 10/10/2006 | Gender: M | Age: 19Y 6M 28D | Category: Adult | Paid: 1400.00 | Home: Chisinau, Zadnipru, 2020 | Work: Chisinau, Studentilor, 2202

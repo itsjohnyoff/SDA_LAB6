@@ -1,0 +1,2658 @@
+﻿% !TEX program = xelatex
+% Compile with XeLaTeX for exact Times New Roman / Courier New fonts.
+% The pdfLaTeX fallback prevents fontspec errors in default LaTeX editors.
+% This file intentionally has no title page.
+% Self-contained report: source code is embedded, so no external C/H files are required for the Program Code section.
+
+\documentclass[12pt,a4paper]{article}
+
+% --- Page + fonts ---
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{iftex}
+\usepackage{setspace}
+\ifPDFTeX
+    \usepackage[T1]{fontenc}
+    \usepackage[utf8]{inputenc}
+    \usepackage{mathptmx}
+    \usepackage{courier}
+\else
+    \usepackage{fontspec}
+    \setmainfont{Times New Roman}
+    \setmonofont{Courier New}
+\fi
+
+% --- Header/footer (page number bottom-center) ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% --- Lists, tables ---
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{array}
+
+% --- Images + float control ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{caption}
+\DeclareCaptionFont{t14}{\fontsize{14}{21}\selectfont}
+\DeclareCaptionFont{t12}{\fontsize{12}{18}\selectfont}
+\captionsetup{font=t14}
+
+% --- Boxes ---
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{breakable}
+
+% --- Code formatting (VS Code-like, light) ---
+\usepackage{xcolor}
+\usepackage{listings}
+
+\definecolor{vscKeyword}{RGB}{0,0,180}
+\definecolor{vscComment}{RGB}{0,128,0}
+\definecolor{vscString}{RGB}{163,21,21}
+\definecolor{vscNumber}{RGB}{9,134,88}
+\definecolor{softGray}{RGB}{245,245,245}
+
+\lstdefinestyle{vscodeC}{
+  language=C,
+  basicstyle=\ttfamily\fontsize{9.5}{11}\selectfont\linespread{1}\selectfont,
+  columns=fullflexible,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  numbers=left,
+  numberstyle=\ttfamily\fontsize{8}{9}\selectfont\color{gray},
+  frame=single,
+  rulecolor=\color{black},
+  backgroundcolor=\color{softGray},
+  keywordstyle=\color{vscKeyword}\bfseries,
+  commentstyle=\color{vscComment},
+  stringstyle=\color{vscString},
+  literate=%
+   *{0}{{{\color{vscNumber}0}}}{1}
+    {1}{{{\color{vscNumber}1}}}{1}
+    {2}{{{\color{vscNumber}2}}}{1}
+    {3}{{{\color{vscNumber}3}}}{1}
+    {4}{{{\color{vscNumber}4}}}{1}
+    {5}{{{\color{vscNumber}5}}}{1}
+    {6}{{{\color{vscNumber}6}}}{1}
+    {7}{{{\color{vscNumber}7}}}{1}
+    {8}{{{\color{vscNumber}8}}}{1}
+    {9}{{{\color{vscNumber}9}}}{1}
+}
+
+\newcommand{\reportimage}[3]{
+\begin{figure}[H]
+    \centering
+    \IfFileExists{#1}{
+        \includegraphics[width=#2\linewidth]{#1}
+    }{
+        \fbox{\parbox[c][5cm][c]{0.88\linewidth}{\centering Missing screenshot file: \texttt{\detokenize{#1}}}}
+    }
+    \caption{#3}
+\end{figure}
+}
+
+\begin{document}
+
+\setcounter{page}{1}
+
+{\fontsize{14}{21}\selectfont
+\setstretch{1.5}
+
+\tableofcontents
+\clearpage
+
+\section{Task}
+
+\noindent Solve the given laboratory problem in C by using user-defined data types, pointers, dynamic memory
+allocation, Stack and Queue abstract data types, and the \texttt{FILE} data type. The solution must be written
+in a procedural style, using self-written functions and header files, and it must be executable through a
+complete menu from the \texttt{main} function.
+
+\vspace{0.45cm}
+\noindent\textbf{Problem Condition:}
+
+\begin{center}
+\begin{tcolorbox}[
+  breakable,
+  width=0.90\textwidth,
+  colback=white,
+  colframe=black,
+  boxrule=0.8pt,
+  left=10pt,right=10pt,top=10pt,bottom=10pt
+]
+\setstretch{1.5}
+
+Develop a procedural-style program in C/C++ using own written functions. Data processing in the program must be
+organized according to a given length of input records based on memory allocation functions.
+
+The program must use pointers, custom data types based on structures, nested structures where necessary, and
+pointer-specific notation. The solution must be organized through header files and must run through a complete
+menu in the \texttt{main} function.
+
+Two distinct versions must be presented:
+
+\begin{enumerate}[label=\Alph*., leftmargin=1.2cm, itemsep=0.25em]
+    \item A version implemented as a dynamic Stack based on a List ADT.
+    \item A version implemented as dynamic Queues based on a List ADT, including Simple Queue, Double Ended
+    Queue, Circular Queue, and Priority Queue.
+\end{enumerate}
+
+The program must support creating, traversing and displaying, inserting, searching by position or value,
+deleting, and registering the newly formed Stack/Queue into files in both text and binary mode. Files must be
+possible to create, open, reopen, and delete.
+
+\end{tcolorbox}
+\end{center}
+
+\begin{center}
+\textit{Figure 1.1 (Problem statement)}
+\end{center}
+
+\clearpage
+
+\section{Proposed Solution}
+
+The developed program uses a custom data type named \texttt{Citizen}. This type represents the input and output
+record processed by all Stack and Queue operations. Each citizen contains personal data, a date of birth, two
+nested address structures, and computed output fields such as age, category, and amount paid.
+
+The solution is divided into modules:
+
+\begin{longtable}{|p{0.24\textwidth}|p{0.66\textwidth}|}
+\hline
+\textbf{File} & \textbf{Responsibility} \\
+\hline
+\texttt{data\_types.h} and \texttt{data\_types.c} & Define the user-defined data types and display helpers. \\
+\hline
+\texttt{stack.h} and \texttt{stack.c} & Implement Version A, the dynamic Stack based on a linked list. \\
+\hline
+\texttt{queue.h} and \texttt{queue.c} & Implement Version B, the Simple Queue, Double Ended Queue, Circular Queue, and Priority Queue. \\
+\hline
+\texttt{file\_io.h} and \texttt{file\_io.c} & Implement file operations for text files, binary files, loading, reopening, and deleting. \\
+\hline
+\texttt{main.c} & Implements input validation and the complete menu system that calls the modules. \\
+\hline
+\end{longtable}
+
+The implementation follows a procedural style: all operations are represented as functions, and the program
+state is passed through pointers to structures such as \texttt{Stack*}, \texttt{Queue*}, and \texttt{Citizen*}.
+
+\subsection{User-Defined Data Type}
+
+The central user-defined data type is:
+
+\begin{lstlisting}[style=vscodeC]
+typedef struct {
+    int day;
+    int month;
+    int year;
+} Date;
+
+typedef struct {
+    char city[CITY_LENGTH];
+    char street[STREET_LENGTH];
+    char postCode[POST_CODE_LENGTH];
+} Address;
+
+typedef struct {
+    char name[NAME_LENGTH];
+    char surname[SURNAME_LENGTH];
+    Date dob;
+    char gender;
+    Address home;
+    Address work;
+
+    int ageYears;
+    int ageMonths;
+    int ageDays;
+    int category;
+    float amountPaid;
+} Citizen;
+\end{lstlisting}
+
+The structure \texttt{Citizen} contains nested structures: \texttt{Date}, \texttt{home Address}, and
+\texttt{work Address}. This satisfies the requirement to use structures and nested structures.
+
+\subsection{Linked List Node}
+
+The Stack and Queue implementations use dynamically allocated linked-list nodes:
+
+\begin{lstlisting}[style=vscodeC]
+typedef struct Node {
+    Citizen data;
+    int priority;
+    struct Node* next;
+    struct Node* prev;
+} Node;
+\end{lstlisting}
+
+The fields \texttt{next} and \texttt{prev} are pointers. They allow the same node structure to support Stack,
+Simple Queue, Deque, Circular Queue, and Priority Queue behavior.
+
+\clearpage
+
+\section{Version A: Dynamic Stack Based on List ADT}
+
+Version A is implemented through the \texttt{Stack} structure:
+
+\begin{lstlisting}[style=vscodeC]
+typedef struct {
+    Node* top;
+    size_t size;
+} Stack;
+\end{lstlisting}
+
+The Stack stores a pointer to the top node and the current number of records. Every inserted element is
+allocated using \texttt{malloc}. Every deleted element is released using \texttt{free}.
+
+\subsection{Operations Implemented}
+
+\begin{longtable}{|p{0.33\textwidth}|p{0.57\textwidth}|}
+\hline
+\textbf{Required operation} & \textbf{Implemented function(s)} \\
+\hline
+Create Stack & \texttt{initStack}, \texttt{createStackFromRecords} \\
+\hline
+Traverse/display Stack & \texttt{displayStack} \\
+\hline
+Insert element & \texttt{pushStack}, called from the menu as push operation \\
+\hline
+Search by position & \texttt{searchStackByPosition} \\
+\hline
+Search by value & \texttt{searchStackBySurname} \\
+\hline
+Delete element & \texttt{popStack}, \texttt{deleteStackByPosition}, \texttt{deleteStackBySurname} \\
+\hline
+Register in file & \texttt{saveStackToTextFile}, \texttt{saveStackToBinaryFile} \\
+\hline
+Reopen/load from file & \texttt{loadStackFromBinaryFile}, \texttt{displayStackBinaryFile} \\
+\hline
+\end{longtable}
+
+\subsection{Stack Insertion}
+
+\begin{lstlisting}[style=vscodeC]
+int pushStack(Stack* s, const Citizen* data) {
+    Node* node;
+
+    if (s == NULL || data == NULL) {
+        return 0;
+    }
+
+    node = createNode(data, 0);
+    if (node == NULL) {
+        printf("Memory allocation failed. Stack insert was cancelled.\n");
+        return 0;
+    }
+
+    node->next = s->top;
+    if (s->top != NULL) {
+        s->top->prev = node;
+    }
+
+    s->top = node;
+    s->size++;
+    return 1;
+}
+\end{lstlisting}
+
+This function inserts a new record at the top of the Stack. It uses pointer notation, dynamic allocation, and
+linked-list references.
+
+\clearpage
+
+\section{Version B: Dynamic Queues Based on List ADT}
+
+Version B is implemented through one unified \texttt{Queue} structure:
+
+\begin{lstlisting}[style=vscodeC]
+typedef enum {
+    QUEUE_SIMPLE = 1,
+    QUEUE_DEQUE = 2,
+    QUEUE_CIRCULAR = 3,
+    QUEUE_PRIORITY = 4
+} QueueType;
+
+typedef struct {
+    Node* front;
+    Node* rear;
+    size_t size;
+    QueueType type;
+} Queue;
+\end{lstlisting}
+
+The same structure supports all four required queue types. The selected queue behavior is controlled by the
+\texttt{type} field.
+
+\subsection{Queue Types Implemented}
+
+\begin{longtable}{|p{0.28\textwidth}|p{0.62\textwidth}|}
+\hline
+\textbf{Queue type} & \textbf{Behavior} \\
+\hline
+Simple Queue & Inserts at the rear and deletes from the front. \\
+\hline
+Double Ended Queue & Supports insertion at front/rear and deletion from front/rear. \\
+\hline
+Circular Queue & The rear node points back to the front node, and the front node points back to the rear. \\
+\hline
+Priority Queue & Records are kept ordered by priority; priority \texttt{1} is the highest priority. \\
+\hline
+\end{longtable}
+
+\subsection{Operations Implemented}
+
+\begin{longtable}{|p{0.33\textwidth}|p{0.57\textwidth}|}
+\hline
+\textbf{Required operation} & \textbf{Implemented function(s)} \\
+\hline
+Create Queue & \texttt{initQueue}, \texttt{createQueueFromRecords} \\
+\hline
+Traverse/display Queue & \texttt{displayQueue} \\
+\hline
+Insert element & \texttt{enqueueQueue}, \texttt{enqueueQueueFront} \\
+\hline
+Search by position & \texttt{searchQueueByPosition} \\
+\hline
+Search by value & \texttt{searchQueueBySurname} \\
+\hline
+Delete element & \texttt{dequeueQueue}, \texttt{dequeueQueueRear}, \texttt{deleteQueueByPosition}, \texttt{deleteQueueBySurname} \\
+\hline
+Register in file & \texttt{saveQueueToTextFile}, \texttt{saveQueueToBinaryFile} \\
+\hline
+Reopen/load from file & \texttt{loadQueueFromBinaryFile}, \texttt{displayQueueBinaryFile} \\
+\hline
+\end{longtable}
+
+\subsection{Priority Queue Insertion}
+
+\begin{lstlisting}[style=vscodeC]
+static int enqueueByPriority(Queue* q, const Citizen* data, int priority) {
+    Node* node;
+    Node* current;
+
+    node = createNode(data, priority);
+    if (node == NULL) {
+        printf("Memory allocation failed. Priority queue insert was cancelled.\n");
+        return 0;
+    }
+
+    if (isQueueEmpty(q)) {
+        q->front = node;
+        q->rear = node;
+    } else if (priority < q->front->priority) {
+        node->next = q->front;
+        q->front->prev = node;
+        q->front = node;
+    } else {
+        current = q->front;
+        while (current->next != NULL && current->next->priority <= priority) {
+            current = current->next;
+        }
+
+        node->next = current->next;
+        node->prev = current;
+        if (current->next != NULL) {
+            current->next->prev = node;
+        } else {
+            q->rear = node;
+        }
+        current->next = node;
+    }
+
+    q->size++;
+    return 1;
+}
+\end{lstlisting}
+
+The Priority Queue inserts each new node into the correct position according to its priority. This makes the
+front node always represent the highest-priority record.
+
+\clearpage
+
+\section{File Processing}
+
+The file processing module uses the C \texttt{FILE} data type and standard file operations:
+\texttt{fopen}, \texttt{fclose}, \texttt{fprintf}, \texttt{fwrite}, \texttt{fread}, \texttt{fgetc}, and
+\texttt{remove}.
+
+\subsection{Supported File Operations}
+
+\begin{enumerate}[label=(\roman*), leftmargin=1.2cm, itemsep=0.25em]
+    \item Create an empty text file.
+    \item Create an empty binary file.
+    \item Open or reopen a text file and display its contents.
+    \item Open or reopen a binary Stack file.
+    \item Open or reopen a binary Queue file.
+    \item Delete a selected file.
+    \item Save Stack records in text mode.
+    \item Save Stack records in binary mode.
+    \item Save Queue records in text mode.
+    \item Save Queue records in binary mode.
+\end{enumerate}
+
+\subsection{Example of Saving a Queue in Binary Mode}
+
+\begin{lstlisting}[style=vscodeC]
+int saveQueueToBinaryFile(const Queue* q, const char* filename) {
+    FILE* file;
+    Node* current;
+    QueueFileRecord record;
+    size_t position;
+
+    if (q == NULL || filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "wb");
+    if (file == NULL) {
+        printf("Could not open file for binary write: %s\n", filename);
+        return 0;
+    }
+
+    current = q->front;
+    for (position = 1; position <= q->size; position++) {
+        record.data = current->data;
+        record.priority = current->priority;
+        fwrite(&record, sizeof(QueueFileRecord), 1, file);
+        current = current->next;
+    }
+
+    fclose(file);
+    printf("Queue saved in binary mode: %s\n", filename);
+    return 1;
+}
+\end{lstlisting}
+
+\clearpage
+
+\section{Requirement Compliance}
+
+\begin{longtable}{|p{0.07\textwidth}|p{0.48\textwidth}|p{0.35\textwidth}|}
+\hline
+\textbf{No.} & \textbf{Requirement} & \textbf{Status} \\
+\hline
+1 & Use pointers. & Implemented through \texttt{Node*}, \texttt{Stack*}, \texttt{Queue*}, \texttt{Citizen*}. \\
+\hline
+2 & Use structures and user-defined data types. & Implemented with \texttt{Citizen}, \texttt{Date}, \texttt{Address}, \texttt{Node}, \texttt{Stack}, \texttt{Queue}. \\
+\hline
+3 & Use nested structures where necessary. & \texttt{Citizen} contains \texttt{Date}, \texttt{home Address}, and \texttt{work Address}. \\
+\hline
+4 & Use dynamic memory allocation. & Implemented with \texttt{malloc}, \texttt{realloc}, and \texttt{free}. \\
+\hline
+5 & Organize solution through header files. & Implemented with \texttt{data\_types.h}, \texttt{stack.h}, \texttt{queue.h}, and \texttt{file\_io.h}. \\
+\hline
+6 & Run through a complete menu in \texttt{main}. & Implemented in \texttt{main.c}. \\
+\hline
+7 & Version A: dynamic Stack based on List ADT. & Implemented in \texttt{stack.c}. \\
+\hline
+8 & Version B: dynamic Queues based on List ADT. & Implemented in \texttt{queue.c}. \\
+\hline
+9 & Include Simple, Double Ended, Circular, and Priority Queue. & All four types are available through the Version B menu. \\
+\hline
+10 & Create, traverse, and display. & Implemented for Stack and all Queues. \\
+\hline
+11 & Insert elements. & Implemented for Stack and all Queues. \\
+\hline
+12 & Search by position or value. & Implemented by position and by surname. \\
+\hline
+13 & Delete elements. & Implemented by ADT operation, by position, and by surname. \\
+\hline
+14 & Register records in text and binary files. & Implemented through \texttt{file\_io.c}. \\
+\hline
+15 & Create, open, reopen, and delete files. & Implemented through the File Tools menu. \\
+\hline
+16 & Commit to Git/GitHub. & Completed. Last commit: \texttt{76cdff9 Implement stack and queue lab versions}. \\
+\hline
+\end{longtable}
+
+\clearpage
+
+\section{Block Diagram}
+
+The block diagram corresponding to the solved problem should show the main menu, the two versions, the four
+queue types, the file tools, and the exit path with memory release.
+
+\reportimage{block_diagram.png}{0.95}{Block diagram of the Stack/Queue program.}
+
+\clearpage
+
+\section{Program Outputs}
+\captionsetup{font=t12}
+
+\reportimage{fig_01_main_menu.png}{0.95}{Main menu with Version A, Version B, file tools, and exit option.}
+
+\reportimage{fig_02_version_a_menu.png}{0.95}{Version A menu for the dynamic Stack based on List ADT.}
+
+\reportimage{fig_03_stack_create_display.png}{0.95}{Creating records and displaying the dynamic Stack.}
+
+\reportimage{fig_04_stack_search_delete.png}{0.95}{Searching and deleting a Stack element by position or surname.}
+
+\reportimage{fig_05_stack_text_binary_save.png}{0.95}{Saving the Stack in text mode and binary mode.}
+
+\reportimage{fig_06_version_b_queue_type.png}{0.95}{Selecting one of the four Queue types in Version B.}
+
+\reportimage{fig_07_simple_queue.png}{0.95}{Simple Queue insertion, deletion, and traversal.}
+
+\reportimage{fig_08_deque.png}{0.95}{Double Ended Queue operations: insertion/deletion from front and rear.}
+
+\reportimage{fig_09_circular_queue.png}{0.95}{Circular Queue traversal after insertion and deletion.}
+
+\reportimage{fig_10_priority_queue.png}{0.95}{Priority Queue ordering, where priority 1 is processed first.}
+
+\reportimage{fig_11_queue_files.png}{0.95}{Registering Queue data into text and binary files.}
+
+\reportimage{fig_12_file_tools.png}{0.95}{File tools: create, open/reopen, and delete files.}
+
+\captionsetup{font=t14}
+
+\clearpage
+
+\section{Program Code}
+
+\noindent\textbf{Compilation command:}
+
+\begin{lstlisting}[style=vscodeC]
+gcc -std=c11 -Wall -Wextra -pedantic main.c data_types.c stack.c queue.c file_io.c -o program.exe
+\end{lstlisting}
+
+\subsection{data\_types.h}
+\begin{lstlisting}[style=vscodeC]
+#ifndef DATA_TYPES_H
+#define DATA_TYPES_H
+
+#include <stddef.h>
+
+#define NAME_LENGTH 50
+#define SURNAME_LENGTH 50
+#define CITY_LENGTH 50
+#define STREET_LENGTH 50
+#define POST_CODE_LENGTH 20
+
+typedef enum {
+    CATEGORY_CHILD = 1,
+    CATEGORY_ADULT = 2,
+    CATEGORY_SENIOR = 3
+} CitizenCategory;
+
+typedef struct {
+    int day;
+    int month;
+    int year;
+} Date;
+
+typedef struct {
+    char city[CITY_LENGTH];
+    char street[STREET_LENGTH];
+    char postCode[POST_CODE_LENGTH];
+} Address;
+
+typedef struct {
+    char name[NAME_LENGTH];
+    char surname[SURNAME_LENGTH];
+    Date dob;
+    char gender;
+    Address home;
+    Address work;
+
+    int ageYears;
+    int ageMonths;
+    int ageDays;
+    int category;
+    float amountPaid;
+} Citizen;
+
+typedef struct Node {
+    Citizen data;
+    int priority;
+    struct Node* next;
+    struct Node* prev;
+} Node;
+
+const char* citizenCategoryName(int category);
+void printCitizenBrief(const Citizen* citizen, size_t position, int priority, int showPriority);
+void printCitizenDetails(const Citizen* citizen);
+
+#endif
+
+\end{lstlisting}
+
+\subsection{data\_types.c}
+\begin{lstlisting}[style=vscodeC]
+#include <stdio.h>
+#include "data_types.h"
+
+const char* citizenCategoryName(int category) {
+    switch (category) {
+        case CATEGORY_CHILD:
+            return "Child";
+        case CATEGORY_ADULT:
+            return "Adult";
+        case CATEGORY_SENIOR:
+            return "Senior";
+        default:
+            return "Unknown";
+    }
+}
+
+void printCitizenBrief(const Citizen* citizen, size_t position, int priority, int showPriority) {
+    if (citizen == NULL) {
+        return;
+    }
+
+    printf("%3zu. %-16s %-16s | DOB: %02d/%02d/%04d | Age: %02dY %02dM %02dD | %s",
+           position,
+           citizen->name,
+           citizen->surname,
+           citizen->dob.day,
+           citizen->dob.month,
+           citizen->dob.year,
+           citizen->ageYears,
+           citizen->ageMonths,
+           citizen->ageDays,
+           citizenCategoryName(citizen->category));
+
+    if (showPriority) {
+        printf(" | Priority: %d", priority);
+    }
+
+    printf("\n");
+}
+
+void printCitizenDetails(const Citizen* citizen) {
+    if (citizen == NULL) {
+        return;
+    }
+
+    printf("\nCitizen record\n");
+    printf("Name: %s %s\n", citizen->name, citizen->surname);
+    printf("Date of birth: %02d/%02d/%04d\n",
+           citizen->dob.day,
+           citizen->dob.month,
+           citizen->dob.year);
+    printf("Gender: %c\n", citizen->gender);
+    printf("Home address: %s, %s, %s\n",
+           citizen->home.city,
+           citizen->home.street,
+           citizen->home.postCode);
+    printf("Work address: %s, %s, %s\n",
+           citizen->work.city,
+           citizen->work.street,
+           citizen->work.postCode);
+    printf("Computed age: %d years, %d months, %d days\n",
+           citizen->ageYears,
+           citizen->ageMonths,
+           citizen->ageDays);
+    printf("Category: %s\n", citizenCategoryName(citizen->category));
+    printf("Amount paid: %.2f\n", citizen->amountPaid);
+}
+
+\end{lstlisting}
+
+\subsection{stack.h}
+\begin{lstlisting}[style=vscodeC]
+#ifndef STACK_H
+#define STACK_H
+
+#include "data_types.h"
+
+typedef struct {
+    Node* top;
+    size_t size;
+} Stack;
+
+void initStack(Stack* s);
+int isStackEmpty(const Stack* s);
+size_t stackSize(const Stack* s);
+
+int pushStack(Stack* s, const Citizen* data);
+int popStack(Stack* s, Citizen* removed);
+
+int searchStackByPosition(const Stack* s, size_t position, Citizen* found);
+int searchStackBySurname(const Stack* s, const char* surname, Citizen* found, size_t* position);
+
+int deleteStackByPosition(Stack* s, size_t position, Citizen* removed);
+int deleteStackBySurname(Stack* s, const char* surname, Citizen* removed, size_t* position);
+
+void displayStack(const Stack* s);
+void clearStack(Stack* s);
+
+#endif
+
+\end{lstlisting}
+
+\subsection{stack.c}
+\begin{lstlisting}[style=vscodeC]
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "stack.h"
+
+static Node* createNode(const Citizen* data, int priority) {
+    Node* node = (Node*)malloc(sizeof(Node));
+    if (node == NULL) {
+        return NULL;
+    }
+
+    node->data = *data;
+    node->priority = priority;
+    node->next = NULL;
+    node->prev = NULL;
+    return node;
+}
+
+static Node* nodeAtPosition(const Stack* s, size_t position) {
+    Node* current;
+    size_t index;
+
+    if (s == NULL || position == 0 || position > s->size) {
+        return NULL;
+    }
+
+    current = s->top;
+    for (index = 1; index < position; index++) {
+        current = current->next;
+    }
+
+    return current;
+}
+
+void initStack(Stack* s) {
+    if (s == NULL) {
+        return;
+    }
+
+    s->top = NULL;
+    s->size = 0;
+}
+
+int isStackEmpty(const Stack* s) {
+    return s == NULL || s->top == NULL;
+}
+
+size_t stackSize(const Stack* s) {
+    return s == NULL ? 0 : s->size;
+}
+
+int pushStack(Stack* s, const Citizen* data) {
+    Node* node;
+
+    if (s == NULL || data == NULL) {
+        return 0;
+    }
+
+    node = createNode(data, 0);
+    if (node == NULL) {
+        printf("Memory allocation failed. Stack insert was cancelled.\n");
+        return 0;
+    }
+
+    node->next = s->top;
+    if (s->top != NULL) {
+        s->top->prev = node;
+    }
+
+    s->top = node;
+    s->size++;
+    return 1;
+}
+
+int popStack(Stack* s, Citizen* removed) {
+    Node* temp;
+
+    if (isStackEmpty(s)) {
+        printf("Stack underflow. The stack is empty.\n");
+        return 0;
+    }
+
+    temp = s->top;
+    if (removed != NULL) {
+        *removed = temp->data;
+    }
+
+    s->top = temp->next;
+    if (s->top != NULL) {
+        s->top->prev = NULL;
+    }
+
+    free(temp);
+    s->size--;
+    return 1;
+}
+
+int searchStackByPosition(const Stack* s, size_t position, Citizen* found) {
+    Node* node = nodeAtPosition(s, position);
+
+    if (node == NULL) {
+        return 0;
+    }
+
+    if (found != NULL) {
+        *found = node->data;
+    }
+
+    return 1;
+}
+
+int searchStackBySurname(const Stack* s, const char* surname, Citizen* found, size_t* position) {
+    Node* current;
+    size_t index;
+
+    if (s == NULL || surname == NULL) {
+        return 0;
+    }
+
+    current = s->top;
+    index = 1;
+
+    while (current != NULL) {
+        if (strcmp(current->data.surname, surname) == 0) {
+            if (found != NULL) {
+                *found = current->data;
+            }
+            if (position != NULL) {
+                *position = index;
+            }
+            return 1;
+        }
+
+        current = current->next;
+        index++;
+    }
+
+    return 0;
+}
+
+int deleteStackByPosition(Stack* s, size_t position, Citizen* removed) {
+    Node* target;
+
+    if (s == NULL || position == 0 || position > s->size) {
+        return 0;
+    }
+
+    if (position == 1) {
+        return popStack(s, removed);
+    }
+
+    target = nodeAtPosition(s, position);
+    if (target == NULL) {
+        return 0;
+    }
+
+    if (removed != NULL) {
+        *removed = target->data;
+    }
+
+    if (target->prev != NULL) {
+        target->prev->next = target->next;
+    }
+    if (target->next != NULL) {
+        target->next->prev = target->prev;
+    }
+
+    free(target);
+    s->size--;
+    return 1;
+}
+
+int deleteStackBySurname(Stack* s, const char* surname, Citizen* removed, size_t* position) {
+    Citizen ignored;
+    size_t foundPosition;
+
+    if (!searchStackBySurname(s, surname, &ignored, &foundPosition)) {
+        return 0;
+    }
+
+    if (position != NULL) {
+        *position = foundPosition;
+    }
+
+    return deleteStackByPosition(s, foundPosition, removed);
+}
+
+void displayStack(const Stack* s) {
+    Node* current;
+    size_t position;
+
+    if (isStackEmpty(s)) {
+        printf("Stack is empty.\n");
+        return;
+    }
+
+    printf("\nVERSION A - Dynamic Stack based on List ADT\n");
+    printf("Records: %zu\n", s->size);
+    printf("Traversal order: top to bottom\n");
+    printf("--------------------------------------------------------------------------\n");
+
+    current = s->top;
+    position = 1;
+    while (current != NULL) {
+        printCitizenBrief(&current->data, position, 0, 0);
+        current = current->next;
+        position++;
+    }
+
+    printf("--------------------------------------------------------------------------\n");
+}
+
+void clearStack(Stack* s) {
+    if (s == NULL) {
+        return;
+    }
+
+    while (!isStackEmpty(s)) {
+        popStack(s, NULL);
+    }
+}
+
+\end{lstlisting}
+
+\subsection{queue.h}
+\begin{lstlisting}[style=vscodeC]
+#ifndef QUEUE_H
+#define QUEUE_H
+
+#include "data_types.h"
+
+typedef enum {
+    QUEUE_SIMPLE = 1,
+    QUEUE_DEQUE = 2,
+    QUEUE_CIRCULAR = 3,
+    QUEUE_PRIORITY = 4
+} QueueType;
+
+typedef struct {
+    Node* front;
+    Node* rear;
+    size_t size;
+    QueueType type;
+} Queue;
+
+void initQueue(Queue* q, QueueType type);
+int isQueueEmpty(const Queue* q);
+size_t queueSize(const Queue* q);
+const char* queueTypeName(QueueType type);
+
+int enqueueQueue(Queue* q, const Citizen* data, int priority);
+int dequeueQueue(Queue* q, Citizen* removed);
+
+int enqueueQueueFront(Queue* q, const Citizen* data);
+int dequeueQueueRear(Queue* q, Citizen* removed);
+
+int searchQueueByPosition(const Queue* q, size_t position, Citizen* found, int* priority);
+int searchQueueBySurname(const Queue* q, const char* surname, Citizen* found, size_t* position, int* priority);
+
+int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* priority);
+int deleteQueueBySurname(Queue* q, const char* surname, Citizen* removed, size_t* position, int* priority);
+
+void displayQueue(const Queue* q);
+void clearQueue(Queue* q);
+
+#endif
+
+\end{lstlisting}
+
+\subsection{queue.c}
+\begin{lstlisting}[style=vscodeC]
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "queue.h"
+
+static int isCircularQueue(const Queue* q) {
+    return q != NULL && q->type == QUEUE_CIRCULAR;
+}
+
+static Node* createNode(const Citizen* data, int priority) {
+    Node* node = (Node*)malloc(sizeof(Node));
+    if (node == NULL) {
+        return NULL;
+    }
+
+    node->data = *data;
+    node->priority = priority;
+    node->next = NULL;
+    node->prev = NULL;
+    return node;
+}
+
+static Node* queueNodeAt(const Queue* q, size_t position) {
+    Node* current;
+    size_t index;
+
+    if (q == NULL || position == 0 || position > q->size) {
+        return NULL;
+    }
+
+    current = q->front;
+    for (index = 1; index < position; index++) {
+        current = current->next;
+    }
+
+    return current;
+}
+
+static int enqueueRearLinear(Queue* q, const Citizen* data, int priority) {
+    Node* node = createNode(data, priority);
+
+    if (node == NULL) {
+        printf("Memory allocation failed. Queue insert was cancelled.\n");
+        return 0;
+    }
+
+    node->prev = q->rear;
+    if (isQueueEmpty(q)) {
+        q->front = node;
+    } else {
+        q->rear->next = node;
+    }
+
+    q->rear = node;
+    q->size++;
+    return 1;
+}
+
+static int enqueueRearCircular(Queue* q, const Citizen* data, int priority) {
+    Node* node = createNode(data, priority);
+
+    if (node == NULL) {
+        printf("Memory allocation failed. Circular queue insert was cancelled.\n");
+        return 0;
+    }
+
+    if (isQueueEmpty(q)) {
+        q->front = node;
+        q->rear = node;
+        node->next = node;
+        node->prev = node;
+    } else {
+        node->prev = q->rear;
+        node->next = q->front;
+        q->rear->next = node;
+        q->front->prev = node;
+        q->rear = node;
+    }
+
+    q->size++;
+    return 1;
+}
+
+static int enqueueByPriority(Queue* q, const Citizen* data, int priority) {
+    Node* node;
+    Node* current;
+
+    node = createNode(data, priority);
+    if (node == NULL) {
+        printf("Memory allocation failed. Priority queue insert was cancelled.\n");
+        return 0;
+    }
+
+    if (isQueueEmpty(q)) {
+        q->front = node;
+        q->rear = node;
+    } else if (priority < q->front->priority) {
+        node->next = q->front;
+        q->front->prev = node;
+        q->front = node;
+    } else {
+        current = q->front;
+        while (current->next != NULL && current->next->priority <= priority) {
+            current = current->next;
+        }
+
+        node->next = current->next;
+        node->prev = current;
+        if (current->next != NULL) {
+            current->next->prev = node;
+        } else {
+            q->rear = node;
+        }
+        current->next = node;
+    }
+
+    q->size++;
+    return 1;
+}
+
+void initQueue(Queue* q, QueueType type) {
+    if (q == NULL) {
+        return;
+    }
+
+    q->front = NULL;
+    q->rear = NULL;
+    q->size = 0;
+    q->type = type;
+}
+
+int isQueueEmpty(const Queue* q) {
+    return q == NULL || q->front == NULL;
+}
+
+size_t queueSize(const Queue* q) {
+    return q == NULL ? 0 : q->size;
+}
+
+const char* queueTypeName(QueueType type) {
+    switch (type) {
+        case QUEUE_SIMPLE:
+            return "Simple Queue";
+        case QUEUE_DEQUE:
+            return "Double Ended Queue";
+        case QUEUE_CIRCULAR:
+            return "Circular Queue";
+        case QUEUE_PRIORITY:
+            return "Priority Queue";
+        default:
+            return "Unknown Queue";
+    }
+}
+
+int enqueueQueue(Queue* q, const Citizen* data, int priority) {
+    if (q == NULL || data == NULL) {
+        return 0;
+    }
+
+    switch (q->type) {
+        case QUEUE_SIMPLE:
+        case QUEUE_DEQUE:
+            return enqueueRearLinear(q, data, 0);
+        case QUEUE_CIRCULAR:
+            return enqueueRearCircular(q, data, 0);
+        case QUEUE_PRIORITY:
+            return enqueueByPriority(q, data, priority);
+        default:
+            return 0;
+    }
+}
+
+int enqueueQueueFront(Queue* q, const Citizen* data) {
+    Node* node;
+
+    if (q == NULL || data == NULL || q->type != QUEUE_DEQUE) {
+        return 0;
+    }
+
+    node = createNode(data, 0);
+    if (node == NULL) {
+        printf("Memory allocation failed. Deque insert was cancelled.\n");
+        return 0;
+    }
+
+    node->next = q->front;
+    if (isQueueEmpty(q)) {
+        q->rear = node;
+    } else {
+        q->front->prev = node;
+    }
+
+    q->front = node;
+    q->size++;
+    return 1;
+}
+
+int dequeueQueue(Queue* q, Citizen* removed) {
+    Node* temp;
+
+    if (isQueueEmpty(q)) {
+        printf("%s underflow. The queue is empty.\n", q == NULL ? "Queue" : queueTypeName(q->type));
+        return 0;
+    }
+
+    temp = q->front;
+    if (removed != NULL) {
+        *removed = temp->data;
+    }
+
+    if (q->size == 1) {
+        q->front = NULL;
+        q->rear = NULL;
+    } else if (isCircularQueue(q)) {
+        q->front = temp->next;
+        q->front->prev = q->rear;
+        q->rear->next = q->front;
+    } else {
+        q->front = temp->next;
+        q->front->prev = NULL;
+    }
+
+    free(temp);
+    q->size--;
+    return 1;
+}
+
+int dequeueQueueRear(Queue* q, Citizen* removed) {
+    Node* temp;
+
+    if (q == NULL || q->type != QUEUE_DEQUE) {
+        return 0;
+    }
+
+    if (isQueueEmpty(q)) {
+        printf("Deque underflow. The deque is empty.\n");
+        return 0;
+    }
+
+    temp = q->rear;
+    if (removed != NULL) {
+        *removed = temp->data;
+    }
+
+    if (q->size == 1) {
+        q->front = NULL;
+        q->rear = NULL;
+    } else {
+        q->rear = temp->prev;
+        q->rear->next = NULL;
+    }
+
+    free(temp);
+    q->size--;
+    return 1;
+}
+
+int searchQueueByPosition(const Queue* q, size_t position, Citizen* found, int* priority) {
+    Node* node = queueNodeAt(q, position);
+
+    if (node == NULL) {
+        return 0;
+    }
+
+    if (found != NULL) {
+        *found = node->data;
+    }
+    if (priority != NULL) {
+        *priority = node->priority;
+    }
+
+    return 1;
+}
+
+int searchQueueBySurname(const Queue* q, const char* surname, Citizen* found, size_t* position, int* priority) {
+    Node* current;
+    size_t index;
+
+    if (q == NULL || surname == NULL) {
+        return 0;
+    }
+
+    current = q->front;
+    for (index = 1; index <= q->size; index++) {
+        if (strcmp(current->data.surname, surname) == 0) {
+            if (found != NULL) {
+                *found = current->data;
+            }
+            if (position != NULL) {
+                *position = index;
+            }
+            if (priority != NULL) {
+                *priority = current->priority;
+            }
+            return 1;
+        }
+
+        current = current->next;
+    }
+
+    return 0;
+}
+
+int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* priority) {
+    Node* target;
+
+    if (q == NULL || position == 0 || position > q->size) {
+        return 0;
+    }
+
+    if (position == 1) {
+        target = q->front;
+        if (priority != NULL) {
+            *priority = target->priority;
+        }
+        return dequeueQueue(q, removed);
+    }
+
+    target = queueNodeAt(q, position);
+    if (target == NULL) {
+        return 0;
+    }
+
+    if (removed != NULL) {
+        *removed = target->data;
+    }
+    if (priority != NULL) {
+        *priority = target->priority;
+    }
+
+    target->prev->next = target->next;
+    if (isCircularQueue(q)) {
+        target->next->prev = target->prev;
+        if (target == q->rear) {
+            q->rear = target->prev;
+        }
+    } else if (target->next != NULL) {
+        target->next->prev = target->prev;
+    } else {
+        q->rear = target->prev;
+    }
+
+    free(target);
+    q->size--;
+    return 1;
+}
+
+int deleteQueueBySurname(Queue* q, const char* surname, Citizen* removed, size_t* position, int* priority) {
+    Citizen ignored;
+    size_t foundPosition;
+
+    if (!searchQueueBySurname(q, surname, &ignored, &foundPosition, priority)) {
+        return 0;
+    }
+
+    if (position != NULL) {
+        *position = foundPosition;
+    }
+
+    return deleteQueueByPosition(q, foundPosition, removed, priority);
+}
+
+void displayQueue(const Queue* q) {
+    Node* current;
+    size_t position;
+    int showPriority;
+
+    if (isQueueEmpty(q)) {
+        printf("%s is empty.\n", q == NULL ? "Queue" : queueTypeName(q->type));
+        return;
+    }
+
+    showPriority = q->type == QUEUE_PRIORITY;
+    printf("\nVERSION B - %s based on List ADT\n", queueTypeName(q->type));
+    printf("Records: %zu\n", q->size);
+    printf("Traversal order: front to rear\n");
+    printf("--------------------------------------------------------------------------\n");
+
+    current = q->front;
+    for (position = 1; position <= q->size; position++) {
+        printCitizenBrief(&current->data, position, current->priority, showPriority);
+        current = current->next;
+    }
+
+    printf("--------------------------------------------------------------------------\n");
+}
+
+void clearQueue(Queue* q) {
+    if (q == NULL) {
+        return;
+    }
+
+    while (!isQueueEmpty(q)) {
+        dequeueQueue(q, NULL);
+    }
+}
+
+\end{lstlisting}
+
+\subsection{file\_io.h}
+\begin{lstlisting}[style=vscodeC]
+#ifndef FILE_IO_H
+#define FILE_IO_H
+
+#include "stack.h"
+#include "queue.h"
+
+int createEmptyDataFile(const char* filename, int binaryMode);
+
+int saveStackToTextFile(const Stack* s, const char* filename);
+int saveStackToBinaryFile(const Stack* s, const char* filename);
+int loadStackFromBinaryFile(Stack* s, const char* filename, int replaceExisting);
+
+int saveQueueToTextFile(const Queue* q, const char* filename);
+int saveQueueToBinaryFile(const Queue* q, const char* filename);
+int loadQueueFromBinaryFile(Queue* q, const char* filename, int replaceExisting);
+
+int displayTextFile(const char* filename);
+int displayStackBinaryFile(const char* filename);
+int displayQueueBinaryFile(const char* filename);
+int deleteDataFile(const char* filename);
+
+#endif
+
+\end{lstlisting}
+
+\subsection{file\_io.c}
+\begin{lstlisting}[style=vscodeC]
+#include <stdio.h>
+#include <stdlib.h>
+#include "file_io.h"
+
+typedef struct {
+    Citizen data;
+    int priority;
+} QueueFileRecord;
+
+static void writeCitizenText(FILE* file, const Citizen* citizen, int priority, int showPriority) {
+    fprintf(file,
+            "%s %s | DOB: %02d/%02d/%04d | Gender: %c | Age: %dY %dM %dD | Category: %s | Paid: %.2f",
+            citizen->name,
+            citizen->surname,
+            citizen->dob.day,
+            citizen->dob.month,
+            citizen->dob.year,
+            citizen->gender,
+            citizen->ageYears,
+            citizen->ageMonths,
+            citizen->ageDays,
+            citizenCategoryName(citizen->category),
+            citizen->amountPaid);
+
+    if (showPriority) {
+        fprintf(file, " | Priority: %d", priority);
+    }
+
+    fprintf(file,
+            " | Home: %s, %s, %s | Work: %s, %s, %s\n",
+            citizen->home.city,
+            citizen->home.street,
+            citizen->home.postCode,
+            citizen->work.city,
+            citizen->work.street,
+            citizen->work.postCode);
+}
+
+int createEmptyDataFile(const char* filename, int binaryMode) {
+    FILE* file;
+
+    if (filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, binaryMode ? "wb" : "w");
+    if (file == NULL) {
+        printf("Could not create file: %s\n", filename);
+        return 0;
+    }
+
+    fclose(file);
+    printf("File created: %s\n", filename);
+    return 1;
+}
+
+int saveStackToTextFile(const Stack* s, const char* filename) {
+    FILE* file;
+    Node* current;
+    size_t position;
+
+    if (s == NULL || filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Could not open file for text write: %s\n", filename);
+        return 0;
+    }
+
+    fprintf(file, "VERSION A - Dynamic Stack based on List ADT\n");
+    fprintf(file, "Records: %zu\n\n", s->size);
+
+    current = s->top;
+    position = 1;
+    while (current != NULL) {
+        fprintf(file, "%zu. ", position);
+        writeCitizenText(file, &current->data, 0, 0);
+        current = current->next;
+        position++;
+    }
+
+    fclose(file);
+    printf("Stack saved in text mode: %s\n", filename);
+    return 1;
+}
+
+int saveStackToBinaryFile(const Stack* s, const char* filename) {
+    FILE* file;
+    Node* current;
+
+    if (s == NULL || filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "wb");
+    if (file == NULL) {
+        printf("Could not open file for binary write: %s\n", filename);
+        return 0;
+    }
+
+    current = s->top;
+    while (current != NULL) {
+        fwrite(&current->data, sizeof(Citizen), 1, file);
+        current = current->next;
+    }
+
+    fclose(file);
+    printf("Stack saved in binary mode: %s\n", filename);
+    return 1;
+}
+
+int loadStackFromBinaryFile(Stack* s, const char* filename, int replaceExisting) {
+    FILE* file;
+    Citizen* records;
+    Citizen* resized;
+    Citizen item;
+    size_t count;
+    size_t capacity;
+    size_t index;
+
+    if (s == NULL || filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Could not open binary stack file: %s\n", filename);
+        return 0;
+    }
+
+    capacity = 8;
+    count = 0;
+    records = (Citizen*)malloc(capacity * sizeof(Citizen));
+    if (records == NULL) {
+        fclose(file);
+        printf("Memory allocation failed while loading stack file.\n");
+        return 0;
+    }
+
+    while (fread(&item, sizeof(Citizen), 1, file) == 1) {
+        if (count == capacity) {
+            capacity *= 2;
+            resized = (Citizen*)realloc(records, capacity * sizeof(Citizen));
+            if (resized == NULL) {
+                free(records);
+                fclose(file);
+                printf("Memory allocation failed while expanding stack load buffer.\n");
+                return 0;
+            }
+            records = resized;
+        }
+
+        records[count++] = item;
+    }
+
+    fclose(file);
+
+    if (replaceExisting) {
+        clearStack(s);
+    }
+
+    for (index = count; index > 0; index--) {
+        if (!pushStack(s, &records[index - 1])) {
+            free(records);
+            printf("Stack load stopped because an insert failed.\n");
+            return 0;
+        }
+    }
+
+    free(records);
+    printf("Loaded %zu stack records from: %s\n", count, filename);
+    return 1;
+}
+
+int saveQueueToTextFile(const Queue* q, const char* filename) {
+    FILE* file;
+    Node* current;
+    size_t position;
+    int showPriority;
+
+    if (q == NULL || filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Could not open file for text write: %s\n", filename);
+        return 0;
+    }
+
+    showPriority = q->type == QUEUE_PRIORITY;
+    fprintf(file, "VERSION B - %s based on List ADT\n", queueTypeName(q->type));
+    fprintf(file, "Records: %zu\n\n", q->size);
+
+    current = q->front;
+    for (position = 1; position <= q->size; position++) {
+        fprintf(file, "%zu. ", position);
+        writeCitizenText(file, &current->data, current->priority, showPriority);
+        current = current->next;
+    }
+
+    fclose(file);
+    printf("Queue saved in text mode: %s\n", filename);
+    return 1;
+}
+
+int saveQueueToBinaryFile(const Queue* q, const char* filename) {
+    FILE* file;
+    Node* current;
+    QueueFileRecord record;
+    size_t position;
+
+    if (q == NULL || filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "wb");
+    if (file == NULL) {
+        printf("Could not open file for binary write: %s\n", filename);
+        return 0;
+    }
+
+    current = q->front;
+    for (position = 1; position <= q->size; position++) {
+        record.data = current->data;
+        record.priority = current->priority;
+        fwrite(&record, sizeof(QueueFileRecord), 1, file);
+        current = current->next;
+    }
+
+    fclose(file);
+    printf("Queue saved in binary mode: %s\n", filename);
+    return 1;
+}
+
+int loadQueueFromBinaryFile(Queue* q, const char* filename, int replaceExisting) {
+    FILE* file;
+    QueueFileRecord record;
+    size_t count;
+
+    if (q == NULL || filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Could not open binary queue file: %s\n", filename);
+        return 0;
+    }
+
+    if (replaceExisting) {
+        clearQueue(q);
+    }
+
+    count = 0;
+    while (fread(&record, sizeof(QueueFileRecord), 1, file) == 1) {
+        if (!enqueueQueue(q, &record.data, record.priority)) {
+            fclose(file);
+            printf("Queue load stopped because an insert failed.\n");
+            return 0;
+        }
+        count++;
+    }
+
+    fclose(file);
+    printf("Loaded %zu queue records from: %s\n", count, filename);
+    return 1;
+}
+
+int displayTextFile(const char* filename) {
+    FILE* file;
+    int ch;
+
+    if (filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Could not open text file: %s\n", filename);
+        return 0;
+    }
+
+    printf("\n--- Text file: %s ---\n", filename);
+    while ((ch = fgetc(file)) != EOF) {
+        putchar(ch);
+    }
+    printf("\n--- End of text file ---\n");
+
+    fclose(file);
+    return 1;
+}
+
+int displayStackBinaryFile(const char* filename) {
+    FILE* file;
+    Citizen item;
+    size_t position;
+
+    if (filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Could not open binary stack file: %s\n", filename);
+        return 0;
+    }
+
+    printf("\n--- Binary stack file: %s ---\n", filename);
+    position = 1;
+    while (fread(&item, sizeof(Citizen), 1, file) == 1) {
+        printCitizenBrief(&item, position, 0, 0);
+        position++;
+    }
+    printf("--- End of binary stack file ---\n");
+
+    fclose(file);
+    return 1;
+}
+
+int displayQueueBinaryFile(const char* filename) {
+    FILE* file;
+    QueueFileRecord record;
+    size_t position;
+
+    if (filename == NULL) {
+        return 0;
+    }
+
+    file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Could not open binary queue file: %s\n", filename);
+        return 0;
+    }
+
+    printf("\n--- Binary queue file: %s ---\n", filename);
+    position = 1;
+    while (fread(&record, sizeof(QueueFileRecord), 1, file) == 1) {
+        printCitizenBrief(&record.data, position, record.priority, 1);
+        position++;
+    }
+    printf("--- End of binary queue file ---\n");
+
+    fclose(file);
+    return 1;
+}
+
+int deleteDataFile(const char* filename) {
+    if (filename == NULL) {
+        return 0;
+    }
+
+    if (remove(filename) == 0) {
+        printf("File deleted: %s\n", filename);
+        return 1;
+    }
+
+    printf("Could not delete file: %s\n", filename);
+    return 0;
+}
+
+\end{lstlisting}
+
+\subsection{main.c}
+\begin{lstlisting}[style=vscodeC]
+#include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "data_types.h"
+#include "file_io.h"
+#include "queue.h"
+#include "stack.h"
+
+#define INPUT_LENGTH 256
+#define MAX_RECORDS 10000
+
+static void trimNewline(char* text) {
+    if (text != NULL) {
+        text[strcspn(text, "\n")] = '\0';
+    }
+}
+
+static int readLine(const char* prompt, char* buffer, size_t length) {
+    if (prompt != NULL) {
+        printf("%s", prompt);
+    }
+
+    if (fgets(buffer, (int)length, stdin) == NULL) {
+        return 0;
+    }
+
+    trimNewline(buffer);
+    return 1;
+}
+
+static void readRequiredString(const char* prompt, char* destination, size_t length) {
+    char buffer[INPUT_LENGTH];
+
+    do {
+        readLine(prompt, buffer, sizeof(buffer));
+        if (buffer[0] == '\0') {
+            printf("This field cannot be empty.\n");
+        }
+    } while (buffer[0] == '\0');
+
+    strncpy(destination, buffer, length - 1);
+    destination[length - 1] = '\0';
+}
+
+static int readIntRange(const char* prompt, int minValue, int maxValue) {
+    char buffer[INPUT_LENGTH];
+    char* end;
+    long value;
+
+    while (1) {
+        readLine(prompt, buffer, sizeof(buffer));
+        errno = 0;
+        value = strtol(buffer, &end, 10);
+        while (isspace((unsigned char)*end)) {
+            end++;
+        }
+
+        if (errno == 0 && end != buffer && *end == '\0' && value >= minValue && value <= maxValue) {
+            return (int)value;
+        }
+
+        printf("Enter an integer from %d to %d.\n", minValue, maxValue);
+    }
+}
+
+static float readFloatMin(const char* prompt, float minValue) {
+    char buffer[INPUT_LENGTH];
+    char* end;
+    float value;
+
+    while (1) {
+        readLine(prompt, buffer, sizeof(buffer));
+        errno = 0;
+        value = strtof(buffer, &end);
+        while (isspace((unsigned char)*end)) {
+            end++;
+        }
+
+        if (errno == 0 && end != buffer && *end == '\0' && value >= minValue) {
+            return value;
+        }
+
+        printf("Enter a number greater than or equal to %.2f.\n", minValue);
+    }
+}
+
+static int readYesNo(const char* prompt) {
+    char buffer[INPUT_LENGTH];
+
+    while (1) {
+        readLine(prompt, buffer, sizeof(buffer));
+        if (buffer[0] == 'y' || buffer[0] == 'Y') {
+            return 1;
+        }
+        if (buffer[0] == 'n' || buffer[0] == 'N') {
+            return 0;
+        }
+
+        printf("Enter y or n.\n");
+    }
+}
+
+static Date currentDate(void) {
+    time_t rawTime = time(NULL);
+    struct tm* local = localtime(&rawTime);
+    Date today = {8, 5, 2026};
+
+    if (local != NULL) {
+        today.day = local->tm_mday;
+        today.month = local->tm_mon + 1;
+        today.year = local->tm_year + 1900;
+    }
+
+    return today;
+}
+
+static int isLeapYear(int year) {
+    return (year % 400 == 0) || (year % 4 == 0 && year % 100 != 0);
+}
+
+static int daysInMonth(int month, int year) {
+    static const int days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+    if (month == 2 && isLeapYear(year)) {
+        return 29;
+    }
+
+    return days[month - 1];
+}
+
+static int isFutureDate(Date date, Date today) {
+    if (date.year != today.year) {
+        return date.year > today.year;
+    }
+    if (date.month != today.month) {
+        return date.month > today.month;
+    }
+    return date.day > today.day;
+}
+
+static int isValidDate(Date date) {
+    if (date.year < 1900 || date.month < 1 || date.month > 12 || date.day < 1) {
+        return 0;
+    }
+
+    return date.day <= daysInMonth(date.month, date.year);
+}
+
+static Date readDateOfBirth(void) {
+    Date date;
+    Date today = currentDate();
+
+    while (1) {
+        date.day = readIntRange("Birth day: ", 1, 31);
+        date.month = readIntRange("Birth month: ", 1, 12);
+        date.year = readIntRange("Birth year: ", 1900, today.year);
+
+        if (isValidDate(date) && !isFutureDate(date, today)) {
+            return date;
+        }
+
+        printf("Invalid or future date. Please enter the date again.\n");
+    }
+}
+
+static void updateDerivedCitizenFields(Citizen* citizen) {
+    Date today;
+    int previousMonth;
+    int previousYear;
+
+    if (citizen == NULL) {
+        return;
+    }
+
+    today = currentDate();
+    citizen->ageYears = today.year - citizen->dob.year;
+    citizen->ageMonths = today.month - citizen->dob.month;
+    citizen->ageDays = today.day - citizen->dob.day;
+
+    if (citizen->ageDays < 0) {
+        citizen->ageMonths--;
+        previousMonth = today.month - 1;
+        previousYear = today.year;
+        if (previousMonth == 0) {
+            previousMonth = 12;
+            previousYear--;
+        }
+        citizen->ageDays += daysInMonth(previousMonth, previousYear);
+    }
+
+    if (citizen->ageMonths < 0) {
+        citizen->ageYears--;
+        citizen->ageMonths += 12;
+    }
+
+    if (citizen->ageYears < 18) {
+        citizen->category = CATEGORY_CHILD;
+    } else if (citizen->ageYears < 60) {
+        citizen->category = CATEGORY_ADULT;
+    } else {
+        citizen->category = CATEGORY_SENIOR;
+    }
+}
+
+static char readGender(void) {
+    char buffer[INPUT_LENGTH];
+    char gender;
+
+    while (1) {
+        readLine("Gender (M/F/O): ", buffer, sizeof(buffer));
+        gender = (char)toupper((unsigned char)buffer[0]);
+        if (gender == 'M' || gender == 'F' || gender == 'O') {
+            return gender;
+        }
+
+        printf("Enter M, F, or O.\n");
+    }
+}
+
+static void inputAddress(const char* title, Address* address) {
+    printf("%s\n", title);
+    readRequiredString("  City: ", address->city, CITY_LENGTH);
+    readRequiredString("  Street: ", address->street, STREET_LENGTH);
+    readRequiredString("  Postal code: ", address->postCode, POST_CODE_LENGTH);
+}
+
+static void inputCitizen(Citizen* citizen, size_t ordinal) {
+    if (citizen == NULL) {
+        return;
+    }
+
+    memset(citizen, 0, sizeof(Citizen));
+    printf("\nCitizen %zu\n", ordinal);
+    readRequiredString("Name: ", citizen->name, NAME_LENGTH);
+    readRequiredString("Surname: ", citizen->surname, SURNAME_LENGTH);
+    citizen->dob = readDateOfBirth();
+    citizen->gender = readGender();
+    inputAddress("Home address", &citizen->home);
+    inputAddress("Work address", &citizen->work);
+    citizen->amountPaid = readFloatMin("Amount paid: ", 0.0f);
+    updateDerivedCitizenFields(citizen);
+}
+
+static void readFileAddress(char* filename, size_t length) {
+    readRequiredString("File address/name: ", filename, length);
+}
+
+static void registerStackToFile(const Stack* stack) {
+    char filename[INPUT_LENGTH];
+    int mode;
+
+    mode = readIntRange("Register stack as 1.Text or 2.Binary: ", 1, 2);
+    readFileAddress(filename, sizeof(filename));
+
+    if (mode == 1) {
+        saveStackToTextFile(stack, filename);
+    } else {
+        saveStackToBinaryFile(stack, filename);
+    }
+}
+
+static void registerQueueToFile(const Queue* queue) {
+    char filename[INPUT_LENGTH];
+    int mode;
+
+    mode = readIntRange("Register queue as 1.Text or 2.Binary: ", 1, 2);
+    readFileAddress(filename, sizeof(filename));
+
+    if (mode == 1) {
+        saveQueueToTextFile(queue, filename);
+    } else {
+        saveQueueToBinaryFile(queue, filename);
+    }
+}
+
+static void offerStackRegistration(const Stack* stack) {
+    if (readYesNo("Register the current stack in a file now? (y/n): ")) {
+        registerStackToFile(stack);
+    }
+}
+
+static void offerQueueRegistration(const Queue* queue) {
+    if (readYesNo("Register the current queue in a file now? (y/n): ")) {
+        registerQueueToFile(queue);
+    }
+}
+
+static void createStackFromRecords(Stack* stack) {
+    Citizen* records;
+    size_t count;
+    size_t index;
+
+    count = (size_t)readIntRange("Number of stack records: ", 1, MAX_RECORDS);
+    records = (Citizen*)malloc(count * sizeof(Citizen));
+    if (records == NULL) {
+        printf("Memory allocation failed. Stack creation was cancelled.\n");
+        return;
+    }
+
+    for (index = 0; index < count; index++) {
+        inputCitizen(&records[index], index + 1);
+    }
+
+    clearStack(stack);
+    for (index = 0; index < count; index++) {
+        pushStack(stack, &records[index]);
+    }
+
+    free(records);
+    printf("Stack created with %zu records. The last entered record is on top.\n", stackSize(stack));
+    offerStackRegistration(stack);
+}
+
+static void pushOneCitizen(Stack* stack) {
+    Citizen citizen;
+
+    inputCitizen(&citizen, stackSize(stack) + 1);
+    if (pushStack(stack, &citizen)) {
+        printf("Citizen pushed to the stack.\n");
+        offerStackRegistration(stack);
+    }
+}
+
+static void popOneCitizen(Stack* stack) {
+    Citizen removed;
+
+    if (popStack(stack, &removed)) {
+        printf("Removed from stack top:\n");
+        printCitizenDetails(&removed);
+        offerStackRegistration(stack);
+    }
+}
+
+static void searchStackPositionMenu(const Stack* stack) {
+    Citizen found;
+    int position;
+
+    if (isStackEmpty(stack)) {
+        printf("Stack is empty.\n");
+        return;
+    }
+
+    position = readIntRange("Position from top: ", 1, (int)stackSize(stack));
+    if (searchStackByPosition(stack, (size_t)position, &found)) {
+        printCitizenDetails(&found);
+    } else {
+        printf("No stack record found at that position.\n");
+    }
+}
+
+static void searchStackSurnameMenu(const Stack* stack) {
+    char surname[SURNAME_LENGTH];
+    Citizen found;
+    size_t position;
+
+    readRequiredString("Surname to search: ", surname, sizeof(surname));
+    if (searchStackBySurname(stack, surname, &found, &position)) {
+        printf("Found at position %zu from top.\n", position);
+        printCitizenDetails(&found);
+    } else {
+        printf("No stack record found for surname: %s\n", surname);
+    }
+}
+
+static void deleteStackPositionMenu(Stack* stack) {
+    Citizen removed;
+    int position;
+
+    if (isStackEmpty(stack)) {
+        printf("Stack is empty.\n");
+        return;
+    }
+
+    position = readIntRange("Position to delete from top: ", 1, (int)stackSize(stack));
+    if (deleteStackByPosition(stack, (size_t)position, &removed)) {
+        printf("Deleted stack record:\n");
+        printCitizenDetails(&removed);
+        offerStackRegistration(stack);
+    } else {
+        printf("Delete failed.\n");
+    }
+}
+
+static void deleteStackSurnameMenu(Stack* stack) {
+    char surname[SURNAME_LENGTH];
+    Citizen removed;
+    size_t position;
+
+    readRequiredString("Surname to delete: ", surname, sizeof(surname));
+    if (deleteStackBySurname(stack, surname, &removed, &position)) {
+        printf("Deleted record at position %zu from top:\n", position);
+        printCitizenDetails(&removed);
+        offerStackRegistration(stack);
+    } else {
+        printf("No stack record found for surname: %s\n", surname);
+    }
+}
+
+static void loadStackMenu(Stack* stack) {
+    char filename[INPUT_LENGTH];
+    int replace;
+
+    readFileAddress(filename, sizeof(filename));
+    replace = readYesNo("Replace the current stack before loading? (y/n): ");
+    loadStackFromBinaryFile(stack, filename, replace);
+}
+
+static void versionAStackMenu(Stack* stack) {
+    int choice;
+    char filename[INPUT_LENGTH];
+
+    while (1) {
+        printf("\n================ VERSION A =================\n");
+        printf("Dynamic Stack based on List ADT\n");
+        printf("1. Create or replace stack from N records\n");
+        printf("2. Insert element: push to stack\n");
+        printf("3. Delete element: pop from stack\n");
+        printf("4. Traverse and display stack\n");
+        printf("5. Search by position\n");
+        printf("6. Search by surname\n");
+        printf("7. Delete by position\n");
+        printf("8. Delete by surname\n");
+        printf("9. Save stack to text file\n");
+        printf("10. Save stack to binary file\n");
+        printf("11. Load stack from binary file\n");
+        printf("0. Back to main menu\n");
+
+        choice = readIntRange("Choice: ", 0, 11);
+        switch (choice) {
+            case 1:
+                createStackFromRecords(stack);
+                break;
+            case 2:
+                pushOneCitizen(stack);
+                break;
+            case 3:
+                popOneCitizen(stack);
+                break;
+            case 4:
+                displayStack(stack);
+                break;
+            case 5:
+                searchStackPositionMenu(stack);
+                break;
+            case 6:
+                searchStackSurnameMenu(stack);
+                break;
+            case 7:
+                deleteStackPositionMenu(stack);
+                break;
+            case 8:
+                deleteStackSurnameMenu(stack);
+                break;
+            case 9:
+                readFileAddress(filename, sizeof(filename));
+                saveStackToTextFile(stack, filename);
+                break;
+            case 10:
+                readFileAddress(filename, sizeof(filename));
+                saveStackToBinaryFile(stack, filename);
+                break;
+            case 11:
+                loadStackMenu(stack);
+                break;
+            case 0:
+                return;
+            default:
+                break;
+        }
+    }
+}
+
+static QueueType readQueueType(void) {
+    printf("\nQueue type\n");
+    printf("1. Simple Queue\n");
+    printf("2. Double Ended Queue\n");
+    printf("3. Circular Queue\n");
+    printf("4. Priority Queue\n");
+    return (QueueType)readIntRange("Select queue type: ", 1, 4);
+}
+
+static Queue* queueByType(Queue queues[], QueueType type) {
+    return &queues[(int)type - 1];
+}
+
+static int readPriority(void) {
+    return readIntRange("Priority (1 = highest priority): ", 1, 1000000);
+}
+
+static void createQueueFromRecords(Queue* queue) {
+    Citizen* records;
+    int* priorities;
+    size_t count;
+    size_t index;
+
+    count = (size_t)readIntRange("Number of queue records: ", 1, MAX_RECORDS);
+    records = (Citizen*)malloc(count * sizeof(Citizen));
+    priorities = (int*)malloc(count * sizeof(int));
+
+    if (records == NULL || priorities == NULL) {
+        free(records);
+        free(priorities);
+        printf("Memory allocation failed. Queue creation was cancelled.\n");
+        return;
+    }
+
+    for (index = 0; index < count; index++) {
+        inputCitizen(&records[index], index + 1);
+        priorities[index] = queue->type == QUEUE_PRIORITY ? readPriority() : 0;
+    }
+
+    clearQueue(queue);
+    for (index = 0; index < count; index++) {
+        enqueueQueue(queue, &records[index], priorities[index]);
+    }
+
+    free(records);
+    free(priorities);
+    printf("%s created with %zu records.\n", queueTypeName(queue->type), queueSize(queue));
+    offerQueueRegistration(queue);
+}
+
+static void enqueueOneCitizen(Queue* queue) {
+    Citizen citizen;
+    int option;
+    int priority;
+
+    inputCitizen(&citizen, queueSize(queue) + 1);
+
+    if (queue->type == QUEUE_DEQUE) {
+        option = readIntRange("Insert at 1.Front or 2.Rear: ", 1, 2);
+        if (option == 1) {
+            if (enqueueQueueFront(queue, &citizen)) {
+                printf("Citizen inserted at the deque front.\n");
+                offerQueueRegistration(queue);
+            }
+        } else if (enqueueQueue(queue, &citizen, 0)) {
+            printf("Citizen inserted at the deque rear.\n");
+            offerQueueRegistration(queue);
+        }
+        return;
+    }
+
+    priority = queue->type == QUEUE_PRIORITY ? readPriority() : 0;
+    if (enqueueQueue(queue, &citizen, priority)) {
+        printf("Citizen inserted into %s.\n", queueTypeName(queue->type));
+        offerQueueRegistration(queue);
+    }
+}
+
+static void dequeueOneCitizen(Queue* queue) {
+    Citizen removed;
+    int option;
+
+    if (queue->type == QUEUE_DEQUE) {
+        option = readIntRange("Delete from 1.Front or 2.Rear: ", 1, 2);
+        if (option == 2) {
+            if (dequeueQueueRear(queue, &removed)) {
+                printf("Removed from deque rear:\n");
+                printCitizenDetails(&removed);
+                offerQueueRegistration(queue);
+            }
+            return;
+        }
+    }
+
+    if (dequeueQueue(queue, &removed)) {
+        printf("Removed from queue front:\n");
+        printCitizenDetails(&removed);
+        offerQueueRegistration(queue);
+    }
+}
+
+static void searchQueuePositionMenu(const Queue* queue) {
+    Citizen found;
+    int priority;
+    int position;
+
+    if (isQueueEmpty(queue)) {
+        printf("%s is empty.\n", queueTypeName(queue->type));
+        return;
+    }
+
+    position = readIntRange("Position from front: ", 1, (int)queueSize(queue));
+    if (searchQueueByPosition(queue, (size_t)position, &found, &priority)) {
+        if (queue->type == QUEUE_PRIORITY) {
+            printf("Priority: %d\n", priority);
+        }
+        printCitizenDetails(&found);
+    } else {
+        printf("No queue record found at that position.\n");
+    }
+}
+
+static void searchQueueSurnameMenu(const Queue* queue) {
+    char surname[SURNAME_LENGTH];
+    Citizen found;
+    size_t position;
+    int priority;
+
+    readRequiredString("Surname to search: ", surname, sizeof(surname));
+    if (searchQueueBySurname(queue, surname, &found, &position, &priority)) {
+        printf("Found at position %zu from front.\n", position);
+        if (queue->type == QUEUE_PRIORITY) {
+            printf("Priority: %d\n", priority);
+        }
+        printCitizenDetails(&found);
+    } else {
+        printf("No queue record found for surname: %s\n", surname);
+    }
+}
+
+static void deleteQueuePositionMenu(Queue* queue) {
+    Citizen removed;
+    int priority;
+    int position;
+
+    if (isQueueEmpty(queue)) {
+        printf("%s is empty.\n", queueTypeName(queue->type));
+        return;
+    }
+
+    position = readIntRange("Position to delete from front: ", 1, (int)queueSize(queue));
+    if (deleteQueueByPosition(queue, (size_t)position, &removed, &priority)) {
+        printf("Deleted queue record:\n");
+        if (queue->type == QUEUE_PRIORITY) {
+            printf("Priority: %d\n", priority);
+        }
+        printCitizenDetails(&removed);
+        offerQueueRegistration(queue);
+    } else {
+        printf("Delete failed.\n");
+    }
+}
+
+static void deleteQueueSurnameMenu(Queue* queue) {
+    char surname[SURNAME_LENGTH];
+    Citizen removed;
+    size_t position;
+    int priority;
+
+    readRequiredString("Surname to delete: ", surname, sizeof(surname));
+    if (deleteQueueBySurname(queue, surname, &removed, &position, &priority)) {
+        printf("Deleted record at position %zu from front:\n", position);
+        if (queue->type == QUEUE_PRIORITY) {
+            printf("Priority: %d\n", priority);
+        }
+        printCitizenDetails(&removed);
+        offerQueueRegistration(queue);
+    } else {
+        printf("No queue record found for surname: %s\n", surname);
+    }
+}
+
+static void loadQueueMenu(Queue* queue) {
+    char filename[INPUT_LENGTH];
+    int replace;
+
+    readFileAddress(filename, sizeof(filename));
+    replace = readYesNo("Replace the current queue before loading? (y/n): ");
+    loadQueueFromBinaryFile(queue, filename, replace);
+}
+
+static void versionBQueueMenu(Queue queues[]) {
+    QueueType activeType = readQueueType();
+    Queue* activeQueue = queueByType(queues, activeType);
+    int choice;
+    char filename[INPUT_LENGTH];
+
+    while (1) {
+        printf("\n================ VERSION B =================\n");
+        printf("%s based on List ADT\n", queueTypeName(activeType));
+        printf("1. Switch queue type\n");
+        printf("2. Create or replace selected queue from N records\n");
+        printf("3. Insert element into selected queue\n");
+        printf("4. Delete element from selected queue\n");
+        printf("5. Traverse and display selected queue\n");
+        printf("6. Search by position\n");
+        printf("7. Search by surname\n");
+        printf("8. Delete by position\n");
+        printf("9. Delete by surname\n");
+        printf("10. Save selected queue to text file\n");
+        printf("11. Save selected queue to binary file\n");
+        printf("12. Load selected queue from binary file\n");
+        printf("0. Back to main menu\n");
+
+        choice = readIntRange("Choice: ", 0, 12);
+        switch (choice) {
+            case 1:
+                activeType = readQueueType();
+                activeQueue = queueByType(queues, activeType);
+                break;
+            case 2:
+                createQueueFromRecords(activeQueue);
+                break;
+            case 3:
+                enqueueOneCitizen(activeQueue);
+                break;
+            case 4:
+                dequeueOneCitizen(activeQueue);
+                break;
+            case 5:
+                displayQueue(activeQueue);
+                break;
+            case 6:
+                searchQueuePositionMenu(activeQueue);
+                break;
+            case 7:
+                searchQueueSurnameMenu(activeQueue);
+                break;
+            case 8:
+                deleteQueuePositionMenu(activeQueue);
+                break;
+            case 9:
+                deleteQueueSurnameMenu(activeQueue);
+                break;
+            case 10:
+                readFileAddress(filename, sizeof(filename));
+                saveQueueToTextFile(activeQueue, filename);
+                break;
+            case 11:
+                readFileAddress(filename, sizeof(filename));
+                saveQueueToBinaryFile(activeQueue, filename);
+                break;
+            case 12:
+                loadQueueMenu(activeQueue);
+                break;
+            case 0:
+                return;
+            default:
+                break;
+        }
+    }
+}
+
+static void fileToolsMenu(void) {
+    int choice;
+    char filename[INPUT_LENGTH];
+
+    while (1) {
+        printf("\n================ FILE TOOLS =================\n");
+        printf("1. Create empty text file\n");
+        printf("2. Create empty binary file\n");
+        printf("3. Open or reopen text file\n");
+        printf("4. Open or reopen binary stack file\n");
+        printf("5. Open or reopen binary queue file\n");
+        printf("6. Delete file\n");
+        printf("0. Back to main menu\n");
+
+        choice = readIntRange("Choice: ", 0, 6);
+        switch (choice) {
+            case 1:
+                readFileAddress(filename, sizeof(filename));
+                createEmptyDataFile(filename, 0);
+                break;
+            case 2:
+                readFileAddress(filename, sizeof(filename));
+                createEmptyDataFile(filename, 1);
+                break;
+            case 3:
+                readFileAddress(filename, sizeof(filename));
+                displayTextFile(filename);
+                break;
+            case 4:
+                readFileAddress(filename, sizeof(filename));
+                displayStackBinaryFile(filename);
+                break;
+            case 5:
+                readFileAddress(filename, sizeof(filename));
+                displayQueueBinaryFile(filename);
+                break;
+            case 6:
+                readFileAddress(filename, sizeof(filename));
+                deleteDataFile(filename);
+                break;
+            case 0:
+                return;
+            default:
+                break;
+        }
+    }
+}
+
+int main(void) {
+    Stack stackVersionA;
+    Queue queuesVersionB[4];
+    int choice;
+    size_t index;
+
+    initStack(&stackVersionA);
+    initQueue(&queuesVersionB[0], QUEUE_SIMPLE);
+    initQueue(&queuesVersionB[1], QUEUE_DEQUE);
+    initQueue(&queuesVersionB[2], QUEUE_CIRCULAR);
+    initQueue(&queuesVersionB[3], QUEUE_PRIORITY);
+
+    while (1) {
+        printf("\n================ MAIN MENU =================\n");
+        printf("1. Version A: Dynamic Stack based on List ADT\n");
+        printf("2. Version B: Dynamic Queues based on List ADT\n");
+        printf("3. File create/open/reopen/delete tools\n");
+        printf("0. Exit\n");
+
+        choice = readIntRange("Choice: ", 0, 3);
+        switch (choice) {
+            case 1:
+                versionAStackMenu(&stackVersionA);
+                break;
+            case 2:
+                versionBQueueMenu(queuesVersionB);
+                break;
+            case 3:
+                fileToolsMenu();
+                break;
+            case 0:
+                clearStack(&stackVersionA);
+                for (index = 0; index < 4; index++) {
+                    clearQueue(&queuesVersionB[index]);
+                }
+                printf("Memory released. Program finished.\n");
+                return 0;
+            default:
+                break;
+        }
+    }
+}
+
+\end{lstlisting}
+
+\clearpage
+
+\section{Conclusion}
+
+This laboratory work presents a complete procedural C solution for processing user-defined records with Stack
+and Queue abstract data types. The program is based on the \texttt{Citizen} custom data type, which contains
+initial input fields and computed output fields. The record also contains nested structures for date and
+addresses, which makes the model closer to a real data-processing task.
+
+Version A implements a dynamic Stack based on a linked-list ADT. It supports creation from a user-defined
+number of records, insertion through push, deletion through pop or direct removal, traversal, searching by
+position, searching by surname, and file registration in text or binary mode.
+
+Version B implements four dynamic Queues based on a linked-list ADT: Simple Queue, Double Ended Queue,
+Circular Queue, and Priority Queue. The same menu structure allows the user to choose the queue type and then
+perform creation, insertion, deletion, traversal, searching, and file registration operations. The Priority
+Queue additionally stores a priority value and keeps records ordered so that the highest-priority citizen is
+processed first.
+
+The solution uses pointers throughout the implementation. List nodes are dynamically allocated with
+\texttt{malloc}, resized loading buffers use \texttt{realloc}, and memory is released with \texttt{free}. File
+processing is implemented through the C \texttt{FILE} data type, supporting both text and binary output, binary
+loading, text-file viewing, binary-file viewing, file creation, file reopening, and file deletion.
+
+Overall, the final program satisfies the stated requirements: it is procedural, modular, menu-driven, organized
+through header files, based on user-defined structures, uses dynamic memory and pointers, implements the
+required Stack and Queue variants, and includes the requested file operations.
+
+}
+\end{document}
+

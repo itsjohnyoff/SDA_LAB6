@@ -26,8 +26,8 @@ static void writeCitizenText(FILE* file, const Citizen* citizen, int priority, i
         fprintf(file, " | Priority: %d", priority);
     }
 
-    fprintf(file,
-            " | Home: %s, %s, %s | Work: %s, %s, %s\n",
+        fprintf(file,
+            " | Home: %s, %s, MD-%s | Work: %s, %s, MD-%s\n",
             citizen->home.city,
             citizen->home.street,
             citizen->home.postCode,

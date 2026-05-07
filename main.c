@@ -66,27 +66,6 @@ static int readIntRange(const char* prompt, int minValue, int maxValue) {
     }
 }
 
-static float readFloatMin(const char* prompt, float minValue) {
-    char buffer[INPUT_LENGTH];
-    char* end;
-    float value;
-
-    while (1) {
-        readLine(prompt, buffer, sizeof(buffer));
-        errno = 0;
-        value = strtof(buffer, &end);
-        while (isspace((unsigned char)*end)) {
-            end++;
-        }
-
-        if (errno == 0 && end != buffer && *end == '\0' && value >= minValue) {
-            return value;
-        }
-
-        printf("Enter a number greater than or equal to %.2f.\n", minValue);
-    }
-}
-
 static int readYesNo(const char* prompt) {
     char buffer[INPUT_LENGTH];
 
@@ -203,6 +182,14 @@ static void updateDerivedCitizenFields(Citizen* citizen) {
     } else {
         citizen->category = CATEGORY_SENIOR;
     }
+
+    if (citizen->category == CATEGORY_CHILD) {
+        citizen->amountPaid = 500.0f;
+    } else if (citizen->category == CATEGORY_ADULT) {
+        citizen->amountPaid = 1000.0f;
+    } else {
+        citizen->amountPaid = 2000.0f;
+    }
 }
 
 static char readGender(void) {
@@ -240,7 +227,6 @@ static void inputCitizen(Citizen* citizen, size_t ordinal) {
     citizen->gender = readGender();
     inputAddress("Home address", &citizen->home);
     inputAddress("Work address", &citizen->work);
-    citizen->amountPaid = readFloatMin("Amount paid: ", 0.0f);
     updateDerivedCitizenFields(citizen);
 }
 
