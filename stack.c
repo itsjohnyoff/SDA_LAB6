@@ -3,7 +3,7 @@
 #include <string.h>
 #include "stack.h"
 
-/* Allocates one linked-list node for the stack. */
+/* allocates a new node and copies citizen data into it */
 static Node* createNode(const Citizen* data, int priority) {
     Node* node = (Node*)malloc(sizeof(Node));
     if (node == NULL) {
@@ -17,7 +17,7 @@ static Node* createNode(const Citizen* data, int priority) {
     return node;
 }
 
-/* Walks from the top to the requested stack position. */
+/* traverses the stack to the given 1-based position */
 static Node* nodeAtPosition(const Stack* s, size_t position) {
     Node* current;
     size_t index;
@@ -34,7 +34,7 @@ static Node* nodeAtPosition(const Stack* s, size_t position) {
     return current;
 }
 
-/* Starts the stack in an empty state. */
+/* sets top to NULL and size to 0 */
 void initStack(Stack* s) {
     if (s == NULL) {
         return;
@@ -52,7 +52,7 @@ size_t stackSize(const Stack* s) {
     return s == NULL ? 0 : s->size;
 }
 
-/* Pushes one citizen record onto the top of the stack. */
+/* push: new node becomes the top of the stack */
 int pushStack(Stack* s, const Citizen* data) {
     Node* node;
 
@@ -76,7 +76,7 @@ int pushStack(Stack* s, const Citizen* data) {
     return 1;
 }
 
-/* Pops the top record and returns it to the caller. */
+/* pop: removes top node and copies its data to *removed */
 int popStack(Stack* s, Citizen* removed) {
     Node* temp;
 
@@ -100,7 +100,7 @@ int popStack(Stack* s, Citizen* removed) {
     return 1;
 }
 
-/* Searches the stack by 1-based position from the top. */
+/* returns the citizen at the given position from the top */
 int searchStackByPosition(const Stack* s, size_t position, Citizen* found) {
     Node* node = nodeAtPosition(s, position);
 
@@ -115,7 +115,7 @@ int searchStackByPosition(const Stack* s, size_t position, Citizen* found) {
     return 1;
 }
 
-/* Finds the first matching surname while scanning from the top. */
+/* scans top-to-bottom looking for a matching surname */
 int searchStackBySurname(const Stack* s, const char* surname, Citizen* found, size_t* position) {
     Node* current;
     size_t index;
@@ -145,7 +145,7 @@ int searchStackBySurname(const Stack* s, const char* surname, Citizen* found, si
     return 0;
 }
 
-/* Deletes a stack record by its position. */
+/* unlinks and frees the node at the given position */
 int deleteStackByPosition(Stack* s, size_t position, Citizen* removed) {
     Node* target;
 
@@ -178,7 +178,7 @@ int deleteStackByPosition(Stack* s, size_t position, Citizen* removed) {
     return 1;
 }
 
-/* Deletes the first record that matches the given surname. */
+/* finds a citizen by surname then deletes at that position */
 int deleteStackBySurname(Stack* s, const char* surname, Citizen* removed, size_t* position) {
     Citizen ignored;
     size_t foundPosition;
@@ -194,7 +194,7 @@ int deleteStackBySurname(Stack* s, const char* surname, Citizen* removed, size_t
     return deleteStackByPosition(s, foundPosition, removed);
 }
 
-/* Prints the stack from top to bottom. */
+/* prints all stack records from top to bottom */
 void displayStack(const Stack* s) {
     Node* current;
     size_t position;
@@ -220,7 +220,7 @@ void displayStack(const Stack* s) {
     printf("--------------------------------------------------------------------------\n");
 }
 
-/* Removes every node and leaves the stack empty. */
+/* pops all nodes, freeing memory */
 void clearStack(Stack* s) {
     if (s == NULL) {
         return;

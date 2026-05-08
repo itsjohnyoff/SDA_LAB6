@@ -1,6 +1,0 @@
-VERSION B - Priority Queue based on List ADT
-Records: 3
-
-1. Serghei  Rusu | DOB: 12/03/2004 | Gender: M | Age: 22Y 1M 26D | Category: Adult | Paid: 2500.00 | Priority: 1 | Home: Balti, Independentei, 3100 | Work: Chisinau, Stefan, 3100
-2. Ion  Popescu | DOB: 01/01/1960 | Gender: M | Age: 66Y 4M 7D | Category: Senior | Paid: 3200.00 | Priority: 2 | Home: Orhei, Vasile Lupu, 3500 | Work: Orhei, Unirii, 3501
-3. David Nenita | DOB: 10/10/2006 | Gender: M | Age: 19Y 6M 28D | Category: Adult | Paid: 1400.00 | Priority: 3 | Home: Chisinau, Zadnipru, 2020 | Work: Chisinau, Studentilor, 2202

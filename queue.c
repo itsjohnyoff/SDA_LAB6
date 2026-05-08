@@ -3,26 +3,26 @@
 #include <string.h>
 #include "queue.h"
 
-/* checks if q is circular type */
+/* returns 1 if queue type is circular */
 static int isCircularQueue(const Queue* q) {
     return q != NULL && q->type == QUEUE_CIRCULAR;
 }
 
-/* allocates a node and copies citizen data + priority into it */
+/* allocates a node with citizen data and priority */
 static Node* createNode(const Citizen* data, int priority) {
     Node* node = (Node*)malloc(sizeof(Node));
     if (node == NULL) {
         return NULL;
     }
 
-    node->data = *data;       /* copies the whole struct */
+    node->data = *data;
     node->priority = priority;
     node->next = NULL;
     node->prev = NULL;
     return node;
 }
 
-/* goes through the list and returns the node at the given position (1-based) */
+/* walks the queue from front, returns node at position (1-based) */
 static Node* queueNodeAt(const Queue* q, size_t position) {
     Node* current;
     size_t index;
@@ -39,7 +39,7 @@ static Node* queueNodeAt(const Queue* q, size_t position) {
     return current;
 }
 
-/* adds a node at the back, used for simple queue and deque */
+/* enqueue at rear for simple queue and deque */
 static int enqueueRearLinear(Queue* q, const Citizen* data, int priority) {
     Node* node = createNode(data, priority);
 
@@ -50,7 +50,7 @@ static int enqueueRearLinear(Queue* q, const Citizen* data, int priority) {
 
     node->prev = q->rear;
     if (isQueueEmpty(q)) {
-        q->front = node;     /* queue was empty, so this is also the front */
+        q->front = node;     /* first element, also becomes front */
     } else {
         q->rear->next = node;
     }
@@ -60,8 +60,8 @@ static int enqueueRearLinear(Queue* q, const Citizen* data, int priority) {
     return 1;
 }
 
-/* adds a node at the back of a circular queue,
-   rear->next always wraps to front, front->prev always wraps to rear */
+/* enqueue at rear for circular queue,
+   maintains the rear->next = front and front->prev = rear loop */
 static int enqueueRearCircular(Queue* q, const Citizen* data, int priority) {
     Node* node = createNode(data, priority);
 
@@ -71,13 +71,13 @@ static int enqueueRearCircular(Queue* q, const Citizen* data, int priority) {
     }
 
     if (isQueueEmpty(q)) {
-        /* only node in the queue, so it loops to itself */
+        /* single node loops to itself */
         q->front = node;
         q->rear = node;
         node->next = node;
         node->prev = node;
     } else {
-        /* put the new node after rear and before front, fix the loop */
+        /* insert between rear and front, update the circular links */
         node->prev = q->rear;
         node->next = q->front;
         q->rear->next = node;
@@ -89,7 +89,7 @@ static int enqueueRearCircular(Queue* q, const Citizen* data, int priority) {
     return 1;
 }
 
-/* inserts into the right spot so the queue stays sorted by priority (ascending) */
+/* inserts node sorted by priority (ascending, lower = higher priority) */
 static int enqueueByPriority(Queue* q, const Citizen* data, int priority) {
     Node* node;
     Node* current;
@@ -101,17 +101,17 @@ static int enqueueByPriority(Queue* q, const Citizen* data, int priority) {
     }
 
     if (isQueueEmpty(q)) {
-        /* nothing in the queue yet */
+        /* empty queue, node is both front and rear */
         q->front = node;
         q->rear = node;
     } else if (priority < q->front->priority) {
-        /* new node has lower priority value than front, so it goes first */
+        /* lower priority than front, insert before front */
         node->next = q->front;
         q->front->prev = node;
         q->front = node;
     } else {
-        /* find the spot where priority is still <= ours,
-           insert after that so equal priorities stay in order */
+        /* walk until we find where to insert,
+           equal priorities keep FIFO order */
         current = q->front;
         while (current->next != NULL && current->next->priority <= priority) {
             current = current->next;
@@ -120,9 +120,9 @@ static int enqueueByPriority(Queue* q, const Citizen* data, int priority) {
         node->next = current->next;
         node->prev = current;
         if (current->next != NULL) {
-            current->next->prev = node;  /* we're in the middle, fix prev pointer */
+            current->next->prev = node;
         } else {
-            q->rear = node;              /* we're at the end, this is the new rear */
+            q->rear = node;
         }
         current->next = node;
     }
@@ -131,7 +131,7 @@ static int enqueueByPriority(Queue* q, const Citizen* data, int priority) {
     return 1;
 }
 
-/* sets front/rear to NULL, size to 0, and stores the queue type */
+/* initializes queue with given type, empty state */
 void initQueue(Queue* q, QueueType type) {
     if (q == NULL) {
         return;
@@ -143,17 +143,17 @@ void initQueue(Queue* q, QueueType type) {
     q->type = type;
 }
 
-/* if front is NULL then there's nothing in the queue */
+/* returns 1 if queue has no elements */
 int isQueueEmpty(const Queue* q) {
     return q == NULL || q->front == NULL;
 }
 
-/* returns the number of elements, 0 if queue is NULL */
+/* returns element count */
 size_t queueSize(const Queue* q) {
     return q == NULL ? 0 : q->size;
 }
 
-/* gives back a string name for the queue type enum */
+/* returns the queue type as a display string */
 const char* queueTypeName(QueueType type) {
     switch (type) {
         case QUEUE_SIMPLE:
@@ -169,8 +169,7 @@ const char* queueTypeName(QueueType type) {
     }
 }
 
-/* calls the correct insert function depending on queue type,
-   priority arg only matters for priority queue, the rest ignore it */
+/* dispatches to the correct enqueue based on queue type */
 int enqueueQueue(Queue* q, const Citizen* data, int priority) {
     if (q == NULL || data == NULL) {
         return 0;
@@ -189,7 +188,7 @@ int enqueueQueue(Queue* q, const Citizen* data, int priority) {
     }
 }
 
-/* inserts at the front of the deque, does nothing for other queue types */
+/* deque-only: inserts a citizen at the front */
 int enqueueQueueFront(Queue* q, const Citizen* data) {
     Node* node;
 
@@ -205,7 +204,7 @@ int enqueueQueueFront(Queue* q, const Citizen* data) {
 
     node->next = q->front;
     if (isQueueEmpty(q)) {
-        q->rear = node;        /* was empty, so this is also the rear */
+        q->rear = node;        /* first element is also the rear */
     } else {
         q->front->prev = node;
     }
@@ -215,8 +214,7 @@ int enqueueQueueFront(Queue* q, const Citizen* data) {
     return 1;
 }
 
-/* takes out the front node, saves its data in *removed if not NULL.
-   when circular, we also have to fix the rear<->front loop */
+/* removes the front node. for circular queues, updates the rear<->front loop */
 int dequeueQueue(Queue* q, Citizen* removed) {
     Node* temp;
 
@@ -247,7 +245,7 @@ int dequeueQueue(Queue* q, Citizen* removed) {
     return 1;
 }
 
-/* removes from the back of the deque, only works for QUEUE_DEQUE */
+/* deque-only: removes the rear node */
 int dequeueQueueRear(Queue* q, Citizen* removed) {
     Node* temp;
 
@@ -278,7 +276,7 @@ int dequeueQueueRear(Queue* q, Citizen* removed) {
     return 1;
 }
 
-/* finds the citizen at the given position and copies their data out */
+/* returns the citizen at the given queue position */
 int searchQueueByPosition(const Queue* q, size_t position, Citizen* found, int* priority) {
     Node* node = queueNodeAt(q, position);
 
@@ -296,8 +294,8 @@ int searchQueueByPosition(const Queue* q, size_t position, Citizen* found, int* 
     return 1;
 }
 
-/* goes through the queue comparing surnames, stops at the first match.
-   uses a counter to iterate because in circular mode there's no NULL at the end */
+/* scans front-to-rear looking for a matching surname.
+   uses a counter because circular queues have no NULL terminator */
 int searchQueueBySurname(const Queue* q, const char* surname, Citizen* found, size_t* position, int* priority) {
     Node* current;
     size_t index;
@@ -327,9 +325,8 @@ int searchQueueBySurname(const Queue* q, const char* surname, Citizen* found, si
     return 0;  /* not found */
 }
 
-/* removes the node at the given position.
-   if position is 1 we just dequeue from front.
-   otherwise we unlink the node and patch the prev/next pointers around it */
+/* unlinks and frees the node at the given position.
+   position 1 is handled by dequeueQueue, rest by pointer patching */
 int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* priority) {
     Node* target;
 
@@ -337,7 +334,7 @@ int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* prio
         return 0;
     }
 
-    /* position 1 = front, just use dequeueQueue */
+    /* front removal, delegate to dequeueQueue */
     if (position == 1) {
         target = q->front;
         if (priority != NULL) {
@@ -351,7 +348,7 @@ int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* prio
         return 0;
     }
 
-    /* save data before we free the node */
+    /* copy data before freeing */
     if (removed != NULL) {
         *removed = target->data;
     }
@@ -359,10 +356,10 @@ int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* prio
         *priority = target->priority;
     }
 
-    /* skip over the target node */
+    /* unlink target from the list */
     target->prev->next = target->next;
     if (isCircularQueue(q)) {
-        /* in circular mode next is never NULL, it wraps */
+        /* circular: next is never NULL, always wraps */
         target->next->prev = target->prev;
         if (target == q->rear) {
             q->rear = target->prev;
@@ -370,7 +367,7 @@ int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* prio
     } else if (target->next != NULL) {
         target->next->prev = target->prev;
     } else {
-        q->rear = target->prev;       /* was the tail, so rear moves back */
+        q->rear = target->prev;       /* target was the tail */
     }
 
     free(target);
@@ -378,8 +375,7 @@ int deleteQueueByPosition(Queue* q, size_t position, Citizen* removed, int* prio
     return 1;
 }
 
-/* finds citizen by surname, gets their position, then deletes at that position.
-   'ignored' is just a dummy variable, we only need the position from the search */
+/* finds citizen by surname, then deletes at that position */
 int deleteQueueBySurname(Queue* q, const char* surname, Citizen* removed, size_t* position, int* priority) {
     Citizen ignored;
     size_t foundPosition;
@@ -395,9 +391,8 @@ int deleteQueueBySurname(Queue* q, const char* surname, Citizen* removed, size_t
     return deleteQueueByPosition(q, foundPosition, removed, priority);
 }
 
-/* prints every citizen from front to rear.
-   iterates with a counter, not by checking NULL, because circular queues loop.
-   shows priority column only when queue type is QUEUE_PRIORITY */
+/* prints all records front to rear.
+   iterates by counter (not NULL check) to handle circular queues */
 void displayQueue(const Queue* q) {
     Node* current;
     size_t position;
@@ -423,7 +418,7 @@ void displayQueue(const Queue* q) {
     printf("--------------------------------------------------------------------------\n");
 }
 
-/* keeps dequeueing until the queue is empty, frees all nodes */
+/* dequeues everything, freeing all nodes */
 void clearQueue(Queue* q) {
     if (q == NULL) {
         return;

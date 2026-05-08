@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "data_types.h"
 
-/* Converts the numeric category into a short label. */
+/* returns "Child", "Adult", or "Senior" for the category value */
 const char* citizenCategoryName(int category) {
     switch (category) {
         case CATEGORY_CHILD:
@@ -15,7 +15,7 @@ const char* citizenCategoryName(int category) {
     }
 }
 
-/* Prints one compact line for list traversal output. */
+/* prints a short one-line summary used in stack/queue traversal */
 void printCitizenBrief(const Citizen* citizen, size_t position, int priority, int showPriority) {
     if (citizen == NULL) {
         return;
@@ -40,7 +40,7 @@ void printCitizenBrief(const Citizen* citizen, size_t position, int priority, in
     printf("\n");
 }
 
-/* Prints the full citizen record for menu actions and file views. */
+/* prints all fields of a citizen record */
 void printCitizenDetails(const Citizen* citizen) {
     if (citizen == NULL) {
         return;

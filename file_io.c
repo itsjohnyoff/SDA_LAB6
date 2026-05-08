@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include "file_io.h"
 
+/* used for queue binary files, stores citizen + priority together */
 typedef struct {
     Citizen data;
     int priority;
 } QueueFileRecord;
 
+/* writes one citizen record as a formatted text line to the file */
 static void writeCitizenText(FILE* file, const Citizen* citizen, int priority, int showPriority) {
     fprintf(file,
             "%s %s | DOB: %02d/%02d/%04d | Gender: %c | Age: %dY %dM %dD | Category: %s | Paid: %.2f",
@@ -26,6 +28,7 @@ static void writeCitizenText(FILE* file, const Citizen* citizen, int priority, i
         fprintf(file, " | Priority: %d", priority);
     }
 
+    /* append home and work addresses */
         fprintf(file,
             " | Home: %s, %s, MD-%s | Work: %s, %s, MD-%s\n",
             citizen->home.city,
@@ -36,6 +39,7 @@ static void writeCitizenText(FILE* file, const Citizen* citizen, int priority, i
             citizen->work.postCode);
 }
 
+/* creates an empty file, text or binary depending on the flag */
 int createEmptyDataFile(const char* filename, int binaryMode) {
     FILE* file;
 
@@ -54,6 +58,7 @@ int createEmptyDataFile(const char* filename, int binaryMode) {
     return 1;
 }
 
+/* saves stack contents to a text file, top to bottom */
 int saveStackToTextFile(const Stack* s, const char* filename) {
     FILE* file;
     Node* current;
@@ -86,6 +91,7 @@ int saveStackToTextFile(const Stack* s, const char* filename) {
     return 1;
 }
 
+/* saves stack contents to a binary file using fwrite per Citizen */
 int saveStackToBinaryFile(const Stack* s, const char* filename) {
     FILE* file;
     Node* current;
@@ -111,6 +117,8 @@ int saveStackToBinaryFile(const Stack* s, const char* filename) {
     return 1;
 }
 
+/* loads Citizen structs from a binary file and pushes them onto the stack.
+   reads into a temp array, then pushes in reverse so file order = stack order */
 int loadStackFromBinaryFile(Stack* s, const char* filename, int replaceExisting) {
     FILE* file;
     Citizen* records;
@@ -130,6 +138,7 @@ int loadStackFromBinaryFile(Stack* s, const char* filename, int replaceExisting)
         return 0;
     }
 
+    /* dynamic buffer, starts at 8 and doubles when needed */
     capacity = 8;
     count = 0;
     records = (Citizen*)malloc(capacity * sizeof(Citizen));
@@ -161,6 +170,7 @@ int loadStackFromBinaryFile(Stack* s, const char* filename, int replaceExisting)
         clearStack(s);
     }
 
+    /* reverse push so first record in file = top of stack */
     for (index = count; index > 0; index--) {
         if (!pushStack(s, &records[index - 1])) {
             free(records);
@@ -174,6 +184,7 @@ int loadStackFromBinaryFile(Stack* s, const char* filename, int replaceExisting)
     return 1;
 }
 
+/* saves queue contents to a text file, front to rear */
 int saveQueueToTextFile(const Queue* q, const char* filename) {
     FILE* file;
     Node* current;
@@ -206,6 +217,7 @@ int saveQueueToTextFile(const Queue* q, const char* filename) {
     return 1;
 }
 
+/* saves queue to binary file, each record = Citizen + priority */
 int saveQueueToBinaryFile(const Queue* q, const char* filename) {
     FILE* file;
     Node* current;
@@ -235,6 +247,8 @@ int saveQueueToBinaryFile(const Queue* q, const char* filename) {
     return 1;
 }
 
+/* loads queue records from binary file and enqueues them.
+   for priority queues, priority is recalculated from category */
 int loadQueueFromBinaryFile(Queue* q, const char* filename, int replaceExisting) {
     FILE* file;
     QueueFileRecord record;
@@ -256,7 +270,7 @@ int loadQueueFromBinaryFile(Queue* q, const char* filename, int replaceExisting)
 
     count = 0;
     while (fread(&record, sizeof(QueueFileRecord), 1, file) == 1) {
-        /* for priority queue, set priority from category (child=1, adult=2, senior=3) */
+        /* priority queue uses category as priority */
         if (q->type == QUEUE_PRIORITY) {
             record.priority = record.data.category;
         }
@@ -273,6 +287,7 @@ int loadQueueFromBinaryFile(Queue* q, const char* filename, int replaceExisting)
     return 1;
 }
 
+/* opens a text file and prints its contents to stdout */
 int displayTextFile(const char* filename) {
     FILE* file;
     int ch;
@@ -297,6 +312,7 @@ int displayTextFile(const char* filename) {
     return 1;
 }
 
+/* opens a stack binary file and prints each Citizen record */
 int displayStackBinaryFile(const char* filename) {
     FILE* file;
     Citizen item;
@@ -324,6 +340,7 @@ int displayStackBinaryFile(const char* filename) {
     return 1;
 }
 
+/* opens a queue binary file and prints each record with priority */
 int displayQueueBinaryFile(const char* filename) {
     FILE* file;
     QueueFileRecord record;
@@ -351,6 +368,7 @@ int displayQueueBinaryFile(const char* filename) {
     return 1;
 }
 
+/* deletes the specified file from disk */
 int deleteDataFile(const char* filename) {
     if (filename == NULL) {
         return 0;

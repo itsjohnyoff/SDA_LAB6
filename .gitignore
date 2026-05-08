@@ -1,0 +1,16 @@
+# Compiled binaries
+*.exe
+*.out
+
+# Output data files (generated at runtime)
+*_output.txt
+*_output.bin
+*_auto.bin
+
+# Report files
+*.tex
+*.pdf
+*.aux
+*.log
+*.toc
+lab6_report_latex.txt

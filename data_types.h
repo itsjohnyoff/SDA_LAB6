@@ -3,35 +3,35 @@
 
 #include <stddef.h>
 
-/* Field sizes used across citizen input and file output. */
+/* max lengths for citizen string fields */
 #define NAME_LENGTH 50
 #define SURNAME_LENGTH 50
 #define CITY_LENGTH 50
 #define STREET_LENGTH 50
 #define POST_CODE_LENGTH 20
 
-/* Basic age category for a citizen. */
+/* age-based citizen category: child (<18), adult (18-59), senior (60+) */
 typedef enum {
     CATEGORY_CHILD = 1,
     CATEGORY_ADULT = 2,
     CATEGORY_SENIOR = 3
 } CitizenCategory;
 
-/* Simple date record for birth date handling. */
+/* day/month/year for date of birth */
 typedef struct {
     int day;
     int month;
     int year;
 } Date;
 
-/* Reused for both home and work addresses. */
+/* city, street, postal code — used for home and work */
 typedef struct {
     char city[CITY_LENGTH];
     char street[STREET_LENGTH];
     char postCode[POST_CODE_LENGTH];
 } Address;
 
-/* Main record processed by the stack and queue menus. */
+/* one citizen record with personal data, addresses, and computed fields */
 typedef struct {
     char name[NAME_LENGTH];
     char surname[SURNAME_LENGTH];
@@ -47,7 +47,7 @@ typedef struct {
     float amountPaid;
 } Citizen;
 
-/* Linked-list node shared by stack and queue implementations. */
+/* doubly-linked list node, holds a Citizen and optional priority */
 typedef struct Node {
     Citizen data;
     int priority;
@@ -55,7 +55,7 @@ typedef struct Node {
     struct Node* prev;
 } Node;
 
-/* Display helpers used by the menu and file modules. */
+/* print helpers for citizen records */
 const char* citizenCategoryName(int category);
 void printCitizenBrief(const Citizen* citizen, size_t position, int priority, int showPriority);
 void printCitizenDetails(const Citizen* citizen);
